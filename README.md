@@ -296,13 +296,62 @@ Users without the required roles will see an error message when attempting to lo
 
 ### AuthServiceClient
 
-Access the auth service client directly:
+The AuthServiceClient provides both high-level authentication methods and low-level HTTP verb utilities for flexible API integration.
+
+#### HTTP Verb Methods
+
+Make direct API calls using HTTP verbs:
 
 ```php
 use AuthService\Helper\Services\AuthServiceClient;
 
 $client = app(AuthServiceClient::class);
 
+// GET request
+$services = $client->get('services');
+$users = $client->get('users', [
+    'query' => ['role' => 'admin'],
+    'auth_token' => $token
+]);
+
+// POST request
+$result = $client->post('services/register', [
+    'name' => 'My Service',
+    'slug' => 'my-service'
+]);
+
+// PUT request
+$updated = $client->put('users/123', [
+    'name' => 'New Name'
+], [
+    'auth_token' => $token
+]);
+
+// PATCH request
+$patched = $client->patch('users/123', [
+    'email' => 'new@email.com'
+], [
+    'auth_token' => $token
+]);
+
+// DELETE request
+$deleted = $client->delete('sessions/abc123', [
+    'auth_token' => $token
+]);
+```
+
+**Available options:**
+- `headers` - Custom HTTP headers
+- `query` - URL query parameters
+- `auth_token` - Bearer token for Authorization
+- `throw` - Whether to throw exceptions (default: true)
+- `log_context` - Additional logging context
+
+📖 **See [AuthServiceClient Usage Guide](docs/AuthServiceClient_Usage.md) for detailed examples and best practices.**
+
+#### High-Level Authentication Methods
+
+```php
 // Generate landing session
 $response = $client->generateLanding('login', 'https://yourapp.com/auth/callback', [
     'metadata' => ['key' => 'value']
