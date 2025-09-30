@@ -71,4 +71,21 @@ return [
     |
     */
     'redirect_after_login' => env('AUTH_SERVICE_REDIRECT_AFTER_LOGIN', '/dashboard'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Auth Guard Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the authservice guard and provider
+    |
+    */
+    'guard' => [
+        'driver' => 'authservice',
+        'provider' => 'authservice',
+    ],
+
+    'provider' => [
+        'driver' => 'authservice',
+    ],
 ];

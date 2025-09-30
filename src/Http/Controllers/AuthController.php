@@ -2,9 +2,11 @@
 
 namespace AuthService\Helper\Http\Controllers;
 
+use AuthService\Helper\Models\User;
 use AuthService\Helper\Services\AuthServiceClient;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -45,16 +47,13 @@ class AuthController extends Controller
      */
     public function showLogin()
     {
-        // Check if user is already authenticated
-        $authToken = session('auth_token');
-        $user = session('auth_user');
-
-        if ($authToken && $user) {
-            $userRoles = $user['user']['roles'] ?? [];
+        // Check if user is already authenticated via guard
+        if (Auth::guard('authservice')->check()) {
+            $user = Auth::guard('authservice')->user();
             $requiredRoles = config('authservice.login_roles');
 
             // Check if user has required roles
-            if ($this->hasRequiredRoles($userRoles, $requiredRoles)) {
+            if ($this->hasRequiredRoles($user->getRoles(), $requiredRoles)) {
                 $redirectUrl = config('authservice.redirect_after_login', '/dashboard');
                 return redirect($redirectUrl)->with('info', 'You are already logged in');
             }
@@ -187,24 +186,27 @@ class AuthController extends Controller
                     ->with('error', $errorMessage);
             }
 
-            $user = $userResponse['data'];
-            $userRoles = $user['user']['roles'] ?? [];
+            $userData = $userResponse['data'];
 
-            // Check if user has required roles
+            // Create User instance and check roles
+            $user = User::createFromSession($userData);
             $requiredRoles = config('authservice.login_roles');
-            if (!$this->hasRequiredRoles($userRoles, $requiredRoles)) {
+            if (!$this->hasRequiredRoles($user->getRoles(), $requiredRoles)) {
                 return redirect()->route('auth.login')
                     ->with('error', 'Access denied. You do not have the required roles to access this service.');
             }
 
-            // Store the token in session
+            // Store user data in session and log in via guard
             $currentTime = now()->timestamp;
             session([
+                'auth_user' => $userData,
                 'auth_token' => $authToken,
-                'auth_user' => $user,
                 'login_time' => $currentTime,
                 'last_activity' => $currentTime,
             ]);
+
+            // Login via the authservice guard
+            Auth::guard('authservice')->login($user);
 
             // Get redirect URL
             $redirectUrl = config('authservice.redirect_after_login', '/dashboard');
@@ -235,8 +237,11 @@ class AuthController extends Controller
                 $this->authServiceClient->logout($authToken);
             }
 
+            // Logout via the authservice guard
+            Auth::guard('authservice')->logout();
+
             // Clear session
-            session()->forget(['auth_token', 'auth_user', 'login_time', 'last_activity']);
+            session()->forget(['auth_token', 'login_time', 'last_activity']);
             session()->flush();
 
             if ($request->expectsJson()) {
@@ -250,7 +255,8 @@ class AuthController extends Controller
                 ->with('success', 'Successfully logged out');
 
         } catch (\Exception $e) {
-            // Clear session anyway
+            // Logout via guard and clear session anyway
+            Auth::guard('authservice')->logout();
             session()->flush();
 
             if ($request->expectsJson()) {

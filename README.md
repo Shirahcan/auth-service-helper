@@ -10,6 +10,12 @@ A lightweight Laravel 12 package for easy integration with the Authentication Mi
 - **Session Management**: Complete authentication session lifecycle management
 - **Callback Handling**: Seamless integration with auth service callbacks
 
+### 👤 Laravel Auth Integration
+- **User Model**: Full `Authenticatable` implementation with role checking
+- **Custom Guard**: Session-based auth guard (`authservice`)
+- **Helper Functions**: Convenient shortcuts (`authservice_user()`, `authservice_id()`)
+- **Familiar Patterns**: Use `auth()->user()` and `auth()->check()` as usual
+
 ### 🛡️ Security Middleware
 - **TrustedServiceMiddleware**: Validate service-to-service trust relationships
 - **HasRoleMiddleware**: Protect routes with role-based access control (supports multiple roles with OR logic)
@@ -24,6 +30,7 @@ A lightweight Laravel 12 package for easy integration with the Authentication Mi
 - **Laravel 12 Ready**: Built specifically for Laravel 12
 - **Responsive UI**: Modern, mobile-friendly authentication pages
 - **Role-Based Access**: Optional role filtering for login pages
+- **Session-Based**: No database required for authentication
 - **GitHub Installation**: Install directly from GitHub repository
 
 ## 📦 Installation
@@ -198,23 +205,188 @@ Add to your layout where you want the account switcher to appear:
     id="my-account-switcher" />
 ```
 
+### Laravel Auth Integration
+
+The package provides a custom `User` model that integrates with Laravel's authentication system, allowing you to use familiar patterns like `auth()->user()` and `auth()->id()`.
+
+#### Using the AuthService Guard
+
+```php
+// Get authenticated user
+$user = auth('authservice')->user();
+
+// Get user ID
+$userId = auth('authservice')->id();
+
+// Check if authenticated
+if (auth('authservice')->check()) {
+    // User is authenticated
+}
+
+// Check if guest
+if (auth('authservice')->guest()) {
+    // User is not authenticated
+}
+```
+
+#### Helper Functions
+
+For convenience, use the provided helper functions:
+
+```php
+// Get authenticated user
+$user = authservice_user();
+
+// Get user ID
+$id = authservice_id();
+
+// Check if authenticated
+if (authservice_check()) {
+    // User is authenticated
+}
+
+// Check if guest
+if (authservice_guest()) {
+    // User is not authenticated
+}
+```
+
+#### Setting the Default Guard
+
+To use `auth()->user()` directly without specifying the guard, set it as default in your `config/auth.php`:
+
+```php
+'defaults' => [
+    'guard' => 'authservice',
+    'passwords' => 'users',
+],
+
+'guards' => [
+    'authservice' => [
+        'driver' => 'authservice',
+        'provider' => 'authservice',
+    ],
+],
+
+'providers' => [
+    'authservice' => [
+        'driver' => 'authservice',
+    ],
+],
+```
+
+Then you can use:
+
+```php
+$user = auth()->user();
+$userId = auth()->id();
+```
+
+#### Accessing User Attributes
+
+```php
+$user = authservice_user();
+
+// Access as properties
+$name = $user->name;
+$email = $user->email;
+$id = $user->id;
+
+// Access as array
+$name = $user['name'];
+
+// Get all attributes
+$attributes = $user->toArray();
+```
+
+#### Role Checking
+
+```php
+$user = authservice_user();
+
+// Check if user has a role
+if ($user->hasRole('admin')) {
+    // User is an admin
+}
+
+// Check if user has service-scoped role
+if ($user->hasServiceRole('documents-service', 'editor')) {
+    // User can edit documents
+}
+
+// Check if user has any of multiple roles
+if ($user->hasAnyRole(['admin', 'moderator'])) {
+    // User has at least one of the roles
+}
+
+// Get all user roles
+$roles = $user->getRoles();
+```
+
+#### In Controllers
+
+```php
+use Illuminate\Http\Request;
+
+class DashboardController extends Controller
+{
+    public function __construct()
+    {
+        // Require authentication
+        $this->middleware('auth:authservice');
+    }
+
+    public function index(Request $request)
+    {
+        $user = authservice_user();
+
+        // Check roles
+        if ($user->hasRole('admin')) {
+            // Show admin dashboard
+        }
+
+        return view('dashboard', [
+            'user' => $user,
+        ]);
+    }
+}
+```
+
+#### In Blade Views
+
+```blade
+@auth('authservice')
+    <p>Welcome, {{ authservice_user()->name }}!</p>
+
+    @if(authservice_user()->hasRole('admin'))
+        <a href="/admin">Admin Panel</a>
+    @endif
+@endauth
+
+@guest('authservice')
+    <a href="{{ route('auth.login') }}">Login</a>
+@endguest
+```
+
+📖 **See [User Model Documentation](docs/User_Model.md) for complete API reference and advanced usage.**
+
 ### Session Management
 
-Access authenticated user data in your controllers:
+You can also access raw session data if needed:
 
 ```php
 public function dashboard(Request $request)
 {
     $token = session('auth_token');
-    $user = session('auth_user');
+    $userData = session('auth_user');
     $loginTime = session('login_time');
 
-    if (!$token || !$user) {
+    if (!$token || !$userData) {
         return redirect()->route('auth.login');
     }
 
     return view('dashboard', [
-        'user' => $user,
+        'token' => $token,
     ]);
 }
 ```

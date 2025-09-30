@@ -2,12 +2,15 @@
 
 namespace AuthService\Helper;
 
+use AuthService\Helper\Auth\SessionGuard;
+use AuthService\Helper\Auth\SessionUserProvider;
 use AuthService\Helper\Http\Controllers\AuthController;
 use AuthService\Helper\Middleware\HasRoleMiddleware;
 use AuthService\Helper\Middleware\TrustedServiceMiddleware;
 use AuthService\Helper\Services\AuthServiceClient;
 use AuthService\Helper\View\Components\AccountSwitcher;
 use AuthService\Helper\View\Components\AccountSwitcherLoader;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -29,6 +32,9 @@ class AuthServiceHelperServiceProvider extends ServiceProvider
         $this->app->singleton(AuthServiceClient::class, function ($app) {
             return new AuthServiceClient();
         });
+
+        // Load helper functions
+        require_once __DIR__ . '/Helpers/auth_helpers.php';
     }
 
     /**
@@ -58,8 +64,31 @@ class AuthServiceHelperServiceProvider extends ServiceProvider
         $router->aliasMiddleware('authservice.trusted', TrustedServiceMiddleware::class);
         $router->aliasMiddleware('authservice.role', HasRoleMiddleware::class);
 
+        // Register custom auth guard and provider
+        $this->registerAuthSystem();
+
         // Register routes
         $this->registerRoutes();
+    }
+
+    /**
+     * Register the custom auth system
+     */
+    protected function registerAuthSystem(): void
+    {
+        // Register the custom user provider
+        Auth::provider('authservice', function ($app, array $config) {
+            return new SessionUserProvider($app['session.store']);
+        });
+
+        // Register the custom guard
+        Auth::extend('authservice', function ($app, $name, array $config) {
+            return new SessionGuard(
+                $name,
+                Auth::createUserProvider($config['provider']),
+                $app['session.store']
+            );
+        });
     }
 
     /**
