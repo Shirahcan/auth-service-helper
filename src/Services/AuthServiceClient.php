@@ -262,4 +262,189 @@ class AuthServiceClient
             'log_context' => ['operation' => 'check_service_trust']
         ]);
     }
+
+    /**
+     * Get users with filters and pagination
+     */
+    public function getUsers(array $params = []): array
+    {
+        return $this->get('users', [
+            'query' => $params,
+            'log_context' => ['operation' => 'get_users']
+        ]);
+    }
+
+    /**
+     * Get a specific user by UUID
+     */
+    public function getUserByUuid(string $uuid): array
+    {
+        return $this->get("users/{$uuid}", [
+            'log_context' => ['operation' => 'get_user', 'user_uuid' => $uuid]
+        ]);
+    }
+
+    /**
+     * Create a new user
+     */
+    public function createUser(array $data): array
+    {
+        return $this->post('users', $data, [
+            'log_context' => ['operation' => 'create_user']
+        ]);
+    }
+
+    /**
+     * Update a user by UUID
+     */
+    public function updateUser(string $uuid, array $data): array
+    {
+        return $this->put("users/{$uuid}", $data, [
+            'log_context' => ['operation' => 'update_user', 'user_uuid' => $uuid]
+        ]);
+    }
+
+    /**
+     * Delete a user by UUID
+     */
+    public function deleteUser(string $uuid): array
+    {
+        return $this->delete("users/{$uuid}", [
+            'log_context' => ['operation' => 'delete_user', 'user_uuid' => $uuid]
+        ]);
+    }
+
+    /**
+     * Find users by custom conditions
+     */
+    public function findUsersBy(array $conditions): array
+    {
+        return $this->post('users/find-by', [
+            'conditions' => $conditions
+        ], [
+            'log_context' => ['operation' => 'find_users_by']
+        ]);
+    }
+
+    /**
+     * Search users across multiple fields
+     */
+    public function searchUsers(string $query): array
+    {
+        return $this->get('users/search', [
+            'query' => ['q' => $query],
+            'log_context' => ['operation' => 'search_users', 'search_query' => $query]
+        ]);
+    }
+
+    /**
+     * Get user count with optional filters
+     */
+    public function getUserCount(array $filters = []): array
+    {
+        return $this->get('users/count', [
+            'query' => $filters,
+            'log_context' => ['operation' => 'get_user_count']
+        ]);
+    }
+
+    /**
+     * Bulk update multiple users
+     */
+    public function bulkUpdateUsers(array $userIds, array $data): array
+    {
+        return $this->post('users/bulk-update', [
+            'user_ids' => $userIds,
+            'data' => $data
+        ], [
+            'log_context' => ['operation' => 'bulk_update_users', 'count' => count($userIds)]
+        ]);
+    }
+
+    /**
+     * Bulk delete multiple users
+     */
+    public function bulkDeleteUsers(array $userIds): array
+    {
+        return $this->post('users/bulk-delete', [
+            'user_ids' => $userIds
+        ], [
+            'log_context' => ['operation' => 'bulk_delete_users', 'count' => count($userIds)]
+        ]);
+    }
+
+    /**
+     * Get user's active sessions
+     */
+    public function getUserSessions(string $uuid): array
+    {
+        return $this->get("users/{$uuid}/sessions", [
+            'log_context' => ['operation' => 'get_user_sessions', 'user_uuid' => $uuid]
+        ]);
+    }
+
+    /**
+     * Get user's roles across all services
+     */
+    public function getUserRoles(string $uuid): array
+    {
+        return $this->get("users/{$uuid}/roles", [
+            'log_context' => ['operation' => 'get_user_roles', 'user_uuid' => $uuid]
+        ]);
+    }
+
+    /**
+     * Get user's service metadata
+     */
+    public function getUserMetadata(string $uuid): array
+    {
+        return $this->get("users/{$uuid}/metadata", [
+            'log_context' => ['operation' => 'get_user_metadata', 'user_uuid' => $uuid]
+        ]);
+    }
+
+    /**
+     * Get all admin users
+     */
+    public function getAdminUsers(): array
+    {
+        return $this->get('users/admins', [
+            'log_context' => ['operation' => 'get_admin_users']
+        ]);
+    }
+
+    /**
+     * Get recently active users
+     */
+    public function getRecentlyActiveUsers(int $days = 7, int $limit = 50): array
+    {
+        return $this->get('users/recent', [
+            'query' => [
+                'days' => $days,
+                'limit' => $limit
+            ],
+            'log_context' => ['operation' => 'get_recently_active_users']
+        ]);
+    }
+
+    /**
+     * Get users with unverified emails
+     */
+    public function getUnverifiedUsers(): array
+    {
+        return $this->get('users/unverified', [
+            'log_context' => ['operation' => 'get_unverified_users']
+        ]);
+    }
+
+    /**
+     * Export users data
+     */
+    public function exportUsers(string $format = 'json'): array
+    {
+        return $this->get('users/export', [
+            'query' => ['format' => $format],
+            'log_context' => ['operation' => 'export_users', 'format' => $format]
+        ]);
+    }
 }

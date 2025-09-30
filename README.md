@@ -16,6 +16,13 @@ A lightweight Laravel 12 package for easy integration with the Authentication Mi
 - **Helper Functions**: Convenient shortcuts (`authservice_user()`, `authservice_id()`)
 - **Familiar Patterns**: Use `auth()->user()` and `auth()->check()` as usual
 
+### 🔍 Eloquent-Like Query Builder
+- **Chainable Queries**: Build complex queries like `User::where('is_admin', true)->orderBy('name')->get()`
+- **Laravel-Style API**: Familiar methods (`find`, `where`, `first`, `paginate`, `count`)
+- **User Collection**: Extended collection with user-specific methods
+- **CRUD Operations**: Create, update, and delete users via API
+- **Named Scopes**: Convenient methods (`admins()`, `recent()`, `search()`)
+
 ### 🛡️ Security Middleware
 - **TrustedServiceMiddleware**: Validate service-to-service trust relationships
 - **HasRoleMiddleware**: Protect routes with role-based access control (supports multiple roles with OR logic)
@@ -369,6 +376,149 @@ class DashboardController extends Controller
 ```
 
 📖 **See [User Model Documentation](docs/User_Model.md) for complete API reference and advanced usage.**
+
+### Querying Users
+
+The package provides an Eloquent-like query builder for fetching users from the auth service API.
+
+#### Basic Queries
+
+```php
+use AuthService\Helper\Models\User;
+
+// Find user by UUID
+$user = User::find('uuid-here');
+
+// Find or throw exception
+$user = User::findOrFail('uuid-here');
+
+// Get all users
+$users = User::all();
+
+// Get first matching user
+$user = User::firstWhere('email', 'john@example.com');
+```
+
+#### Where Clauses
+
+```php
+// Simple where
+$admins = User::where('is_admin', true)->get();
+
+// Where with operator
+$users = User::where('email', 'like', '%@example.com%')->get();
+
+// Multiple where clauses
+$users = User::where('is_admin', true)
+    ->where('email_verified', true)
+    ->get();
+
+// Complex queries
+$users = User::where('is_admin', false)
+    ->whereNotNull('email_verified_at')
+    ->orderBy('created_at', 'desc')
+    ->limit(50)
+    ->get();
+```
+
+#### Named Scopes
+
+```php
+// Get admin users
+$admins = User::admins();
+
+// Get recently active users
+$recent = User::recent(7, 50); // Last 7 days, limit 50
+
+// Get unverified users
+$unverified = User::unverified();
+
+// Search users
+$results = User::search('john');
+```
+
+#### Pagination
+
+```php
+// Paginate results
+$users = User::where('is_admin', false)->paginate(15);
+
+// Access pagination data
+foreach ($users as $user) {
+    echo $user->name;
+}
+
+echo $users->total(); // Total count
+echo $users->currentPage(); // Current page
+```
+
+#### CRUD Operations
+
+```php
+// Create user
+$user = User::create([
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'password' => 'secret123'
+]);
+
+// Update user
+$user = User::find('uuid-here');
+$user->update(['name' => 'Jane Doe']);
+
+// Delete user
+$user->delete();
+
+// Bulk operations
+User::updateMany(['uuid1', 'uuid2'], ['is_admin' => true]);
+User::deleteMany(['uuid1', 'uuid2']);
+```
+
+#### Working with Collections
+
+```php
+$users = User::all();
+
+// Filter collections
+$admins = $users->admins();
+$verified = $users->verified();
+$byService = $users->byService('service-uuid');
+
+// Get user data
+$ids = $users->ids(); // Collection of UUIDs
+$emails = $users->emails(); // Collection of emails
+
+// Sort collections
+$sorted = $users->sortByName();
+$sorted = $users->sortByLastLogin();
+
+// Get statistics
+$stats = $users->statistics();
+// Returns: ['total' => 100, 'admins' => 5, 'verified' => 80, ...]
+
+// Group by role
+$grouped = $users->groupByRole();
+```
+
+#### Instance Methods
+
+```php
+$user = User::find('uuid-here');
+
+// Refresh data from API
+$user->refresh();
+
+// Get user's sessions
+$sessions = $user->sessions();
+
+// Get user's roles (refreshed from API)
+$roles = $user->roles();
+
+// Get user's metadata
+$metadata = $user->metadata();
+```
+
+📖 **See [User Query Builder Documentation](docs/User_Query_Builder.md) for complete query builder API and advanced examples.**
 
 ### Session Management
 
