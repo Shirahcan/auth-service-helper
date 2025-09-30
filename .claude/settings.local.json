@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/benpl/Documents/GitHub/documents-service/project/resources/views/admin/layouts/**)",
+      "Read(//c/Users/benpl/Documents/GitHub/auth-service-wrapper-laravel/project/packages/authservice/wrapper/src/Services/**)",
+      "Read(//c/Users/benpl/Documents/GitHub/auth-service-wrapper-laravel/project/packages/authservice/wrapper/**)",
+      "Bash(composer install:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

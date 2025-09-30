@@ -1,0 +1,68 @@
+{
+    "name": "shirahcan/auth-service-helper",
+    "description": "Lightweight Laravel package for easy integration with Authentication Microservice - web flows, middleware, and UI components",
+    "type": "library",
+    "license": "MIT",
+    "version": "1.0.0",
+    "keywords": [
+        "laravel",
+        "authentication",
+        "middleware",
+        "auth-service",
+        "blade-components",
+        "web-authentication",
+        "account-switcher"
+    ],
+    "homepage": "https://github.com/Shirahcan/auth-service-helper",
+    "authors": [
+        {
+            "name": "Benebo Braide",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/Shirahcan/auth-service-helper/issues",
+        "source": "https://github.com/Shirahcan/auth-service-helper"
+    },
+    "autoload": {
+        "psr-4": {
+            "AuthService\\Helper\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^12.0",
+        "illuminate/http": "^12.0",
+        "illuminate/routing": "^12.0",
+        "illuminate/view": "^12.0",
+        "illuminate/session": "^12.0",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0",
+        "mockery/mockery": "^1.6"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "AuthService\\Helper\\AuthServiceHelperServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "preferred-install": "dist"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "scripts": {
+        "test": "phpunit",
+        "test-coverage": "phpunit --coverage-html coverage"
+    }
+}
