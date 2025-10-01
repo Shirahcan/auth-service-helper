@@ -99,6 +99,25 @@ class UserQueryBuilder
     }
 
     /**
+     * Add a where not in clause to the query
+     *
+     * @param string $field Field name
+     * @param array $values Array of values
+     * @return $this
+     */
+    public function whereNotIn(string $field, array $values): self
+    {
+        $this->wheres[] = [
+            'field' => $field,
+            'operator' => 'notIn',
+            'value' => $values,
+            'type' => 'and'
+        ];
+
+        return $this;
+    }
+
+    /**
      * Add a where null clause
      *
      * @param string $field Field name
@@ -305,6 +324,7 @@ class UserQueryBuilder
                 return true;
             }
 
+            // Use find-by endpoint for complex operators (in, notIn, etc.)
             if (!in_array($operator, ['=', 'like', 'null', 'not_null'])) {
                 return true;
             }

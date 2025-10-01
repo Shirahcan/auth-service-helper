@@ -419,6 +419,19 @@ $users = User::where('is_admin', false)
     ->orderBy('created_at', 'desc')
     ->limit(50)
     ->get();
+
+// WhereIn - match any value in array
+$userIds = ['uuid-1', 'uuid-2', 'uuid-3'];
+$users = User::whereIn('id', $userIds)->get();
+
+// WhereNotIn - exclude values in array
+$excludedIds = ['uuid-4', 'uuid-5'];
+$users = User::whereNotIn('id', $excludedIds)->get();
+
+// Combining whereIn with other conditions
+$users = User::whereIn('id', $userIds)
+    ->where('is_admin', false)
+    ->get();
 ```
 
 #### Named Scopes

@@ -11,20 +11,24 @@ class AuthServiceClient
     protected Client $client;
     protected string $baseUrl;
     protected string $apiKey;
+    protected array $defaultHeaders;
 
     public function __construct()
     {
         $this->baseUrl = config('authservice.auth_service_base_url');
         $this->apiKey = config('authservice.auth_service_api_key');
 
+        // Store default headers as class property for reliable access
+        // NOTE: Auth service expects X-API-Key header, not X-Service-Key
+        $this->defaultHeaders = [
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+            'X-API-Key' => $this->apiKey,
+        ];
+
         $this->client = new Client([
             'base_uri' => $this->baseUrl,
             'timeout' => config('authservice.timeout', 30),
-            'headers' => [
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-                'X-Service-Key' => $this->apiKey,
-            ],
         ]);
     }
 
@@ -51,12 +55,20 @@ class AuthServiceClient
             $method = strtoupper($method);
             $requestOptions = [];
 
-            // Add custom headers if provided
+            // Always start with default headers to ensure X-Service-Key is included
+            $requestOptions['headers'] = $this->defaultHeaders;
+
+            // Merge custom headers if provided
             if (isset($options['headers'])) {
                 $requestOptions['headers'] = array_merge(
-                    $this->client->getConfig('headers') ?? [],
+                    $requestOptions['headers'],
                     $options['headers']
                 );
+            }
+
+            // Add Bearer token if provided
+            if (isset($options['auth_token'])) {
+                $requestOptions['headers']['Authorization'] = 'Bearer ' . $options['auth_token'];
             }
 
             // Add query parameters if provided
@@ -69,14 +81,6 @@ class AuthServiceClient
                 $requestOptions['json'] = $options['json'];
             }
 
-            // Add Bearer token if provided
-            if (isset($options['auth_token'])) {
-                $requestOptions['headers'] = array_merge(
-                    $requestOptions['headers'] ?? [],
-                    ['Authorization' => 'Bearer ' . $options['auth_token']]
-                );
-            }
-
             // Make the request
             $response = $this->client->request($method, $this->buildApiUrl($endpoint), $requestOptions);
 
@@ -84,15 +88,24 @@ class AuthServiceClient
             return json_decode($response->getBody()->getContents(), true);
 
         } catch (RequestException $e) {
+            $statusCode = $e->getResponse() ? $e->getResponse()->getStatusCode() : null;
+            $responseBody = $e->getResponse() ? $e->getResponse()->getBody()->getContents() : null;
+
             $logContext = array_merge(
                 [
                     'method' => $method,
                     'endpoint' => $endpoint,
                     'error' => $e->getMessage(),
-                    'response' => $e->getResponse() ? $e->getResponse()->getBody()->getContents() : null
+                    'status_code' => $statusCode,
+                    'response' => $responseBody
                 ],
                 $options['log_context'] ?? []
             );
+
+            // Add specific hint for 401 errors
+            if ($statusCode === 401) {
+                $logContext['hint'] = 'Check that AUTH_SERVICE_API_KEY is set correctly';
+            }
 
             Log::error('Auth Service request failed', $logContext);
 
@@ -105,7 +118,7 @@ class AuthServiceClient
             return [
                 'success' => false,
                 'message' => $e->getMessage(),
-                'status_code' => $e->getResponse() ? $e->getResponse()->getStatusCode() : null
+                'status_code' => $statusCode
             ];
         }
     }
