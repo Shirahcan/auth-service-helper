@@ -7,7 +7,9 @@
       "Bash(composer install:*)",
       "Read(//c/Users/benpl/Documents/GitHub/auth-service/project/app/Models/**)",
       "Read(//c/Users/benpl/Documents/GitHub/auth-service/project/app/Http/Controllers/Api/V1/**)",
-      "Bash(php:*)"
+      "Bash(php:*)",
+      "Read(//c/Users/benpl/Documents/GitHub/auth-service/project/resources/js/components/**)",
+      "Read(//c/Users/benpl/Documents/GitHub/auth-service/project/**)"
     ],
     "deny": [],
     "ask": []

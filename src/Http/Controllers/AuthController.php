@@ -196,6 +196,40 @@ class AuthController extends Controller
                     ->with('error', 'Access denied. You do not have the required roles to access this service.');
             }
 
+            // CRITICAL FIX: Always fetch session accounts to get the correct active account
+            // The /me call above validates the token, but in a multi-account session, we need the active account data
+            // This ensures Laravel session is always synchronized with the auth service's active account
+            $sessionAccountsResponse = $this->authServiceClient->getSessionAccounts($authToken);
+
+            if (($sessionAccountsResponse['success'] ?? false) && isset($sessionAccountsResponse['data']['session'])) {
+                $session = $sessionAccountsResponse['data']['session'];
+                $activeAccountRef = $session['active_account'] ?? null;
+                $accounts = $session['accounts'] ?? [];
+
+                // Find the active account in the accounts array using the UUID
+                if ($activeAccountRef && isset($activeAccountRef['uuid'])) {
+                    $activeAccountData = collect($accounts)->firstWhere('id', $activeAccountRef['uuid']);
+
+                    if ($activeAccountData) {
+                        // Convert active account data to the format expected by User model
+                        $userData = [
+                            'id' => $activeAccountData['id'],
+                            'name' => $activeAccountData['name'],
+                            'email' => $activeAccountData['email'],
+                            'email_verified' => $activeAccountData['email_verified'] ?? $userData['email_verified'] ?? false,
+                            'service_metadata' => $activeAccountData['service_metadata'] ?? $userData['service_metadata'] ?? null,
+                            'created_by_service' => $activeAccountData['created_by_service'] ?? $userData['created_by_service'] ?? null,
+                            'last_login_at' => $activeAccountData['last_login_at'] ?? $userData['last_login_at'] ?? null,
+                            'created_at' => $activeAccountData['created_at'] ?? $userData['created_at'] ?? null,
+                            'roles' => $activeAccountData['roles'] ?? $userData['roles'] ?? [],
+                        ];
+
+                        // Update user instance with active account data
+                        $user = User::createFromSession($userData);
+                    }
+                }
+            }
+
             // Store user data in session and log in via guard
             $currentTime = now()->timestamp;
             session([
@@ -208,14 +242,21 @@ class AuthController extends Controller
             // Login via the authservice guard
             Auth::guard('authservice')->login($user);
 
-            // Get redirect URL
-            $redirectUrl = config('authservice.redirect_after_login', '/dashboard');
+            // Determine redirect URL based on action type
+            $action = $request->input('action');
+            if ($action === 'add-account') {
+                // For add-account, redirect to the return URL or referer
+                $redirectUrl = $request->input('return_url') ?: $request->header('referer') ?: config('authservice.redirect_after_login', '/dashboard');
+            } else {
+                // For login, use configured redirect URL
+                $redirectUrl = config('authservice.redirect_after_login', '/dashboard');
+            }
 
             // Return a view that stores token in localStorage before redirecting
             return view('authservice::auth.redirect-with-token', [
                 'token' => $authToken,
                 'redirectUrl' => $redirectUrl,
-                'successMessage' => 'Successfully logged in'
+                'successMessage' => $action === 'add-account' ? 'Account added successfully' : 'Successfully logged in'
             ]);
 
         } catch (\Exception $e) {
@@ -240,9 +281,15 @@ class AuthController extends Controller
             // Logout via the authservice guard
             Auth::guard('authservice')->logout();
 
-            // Clear session
-            session()->forget(['auth_token', 'login_time', 'last_activity']);
-            session()->flush();
+            // CRITICAL FIX: Clear ALL session data properly
+            // Explicitly forget all auth-related session keys
+            session()->forget(['auth_token', 'auth_user', 'login_time', 'last_activity']);
+
+            // Invalidate the entire session (destroys session and regenerates ID)
+            $request->session()->invalidate();
+
+            // Regenerate CSRF token for security
+            $request->session()->regenerateToken();
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -257,7 +304,10 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             // Logout via guard and clear session anyway
             Auth::guard('authservice')->logout();
-            session()->flush();
+
+            // Clear session even on error
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
             if ($request->expectsJson()) {
                 return response()->json([

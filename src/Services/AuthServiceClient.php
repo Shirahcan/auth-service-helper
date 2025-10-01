@@ -28,7 +28,8 @@ class AuthServiceClient
 
         $this->client = new Client([
             'base_uri' => $this->baseUrl,
-            'timeout' => config('authservice.timeout', 30),
+            'timeout' => config('authservice.timeout', 5),
+            'connect_timeout' => config('authservice.connect_timeout', 2),
         ]);
     }
 
@@ -458,6 +459,75 @@ class AuthServiceClient
         return $this->get('users/export', [
             'query' => ['format' => $format],
             'log_context' => ['operation' => 'export_users', 'format' => $format]
+        ]);
+    }
+
+    /**
+     * Get all accounts in the current multi-account session
+     */
+    public function getSessionAccounts(string $token): array
+    {
+        return $this->get('auth/session-accounts', [
+            'auth_token' => $token,
+            'log_context' => ['operation' => 'get_session_accounts']
+        ]);
+    }
+
+    /**
+     * Switch to a different account in the current session
+     */
+    public function switchAccount(string $token, string $userUuid): array
+    {
+        return $this->post('auth/switch-account', [
+            'user_uuid' => $userUuid
+        ], [
+            'auth_token' => $token,
+            'log_context' => ['operation' => 'switch_account', 'user_uuid' => $userUuid]
+        ]);
+    }
+
+    /**
+     * Add another account to the current session via credentials
+     */
+    public function addAccount(string $token, string $email, string $password): array
+    {
+        return $this->post('auth/add-account', [
+            'email' => $email,
+            'password' => $password
+        ], [
+            'auth_token' => $token,
+            'log_context' => ['operation' => 'add_account', 'email' => $email]
+        ]);
+    }
+
+    /**
+     * Create a landing session for adding another account
+     */
+    public function createAddAccountSession(string $token, string $callbackUrl, ?array $roles = null): array
+    {
+        $payload = [
+            'callback_url' => $callbackUrl
+        ];
+
+        if ($roles && count($roles) > 0) {
+            $payload['roles'] = $roles;
+        }
+
+        return $this->post('auth/create-add-account-session', $payload, [
+            'auth_token' => $token,
+            'log_context' => ['operation' => 'create_add_account_session']
+        ]);
+    }
+
+    /**
+     * Remove an account from the current session
+     */
+    public function removeAccount(string $token, string $userUuid): array
+    {
+        return $this->delete("auth/remove-account/{$userUuid}", [
+            'auth_token' => $token,
+            'throw' => false, // Don't throw exception, return error response instead
+            'log_context' => ['operation' => 'remove_account', 'user_uuid' => $userUuid]
         ]);
     }
 }

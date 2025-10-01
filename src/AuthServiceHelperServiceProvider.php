@@ -105,6 +105,16 @@ class AuthServiceHelperServiceProvider extends ServiceProvider
             Route::post('/generate', [AuthController::class, 'generateLanding'])->name('generate');
             Route::get('/callback', [AuthController::class, 'handleCallback'])->name('callback');
             Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+            // Account switcher routes
+            Route::get('/session-accounts', [\AuthService\Helper\Http\Controllers\AccountSwitcherController::class, 'getSessionAccounts'])
+                ->name('session-accounts');
+            Route::post('/switch-account', [\AuthService\Helper\Http\Controllers\AccountSwitcherController::class, 'switchAccount'])
+                ->name('switch-account');
+            Route::post('/create-add-account-session', [\AuthService\Helper\Http\Controllers\AccountSwitcherController::class, 'createAddAccountSession'])
+                ->name('create-add-account-session');
+            Route::delete('/remove-account/{uuid}', [\AuthService\Helper\Http\Controllers\AccountSwitcherController::class, 'removeAccount'])
+                ->name('remove-account');
         });
     }
 }
