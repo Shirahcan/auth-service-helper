@@ -115,6 +115,12 @@ class AuthServiceHelperServiceProvider extends ServiceProvider
                 ->name('create-add-account-session');
             Route::delete('/remove-account/{uuid}', [\AuthService\Helper\Http\Controllers\AccountSwitcherController::class, 'removeAccount'])
                 ->name('remove-account');
+
+            // Iframe widget session sync routes
+            Route::post('/sync-session', [\AuthService\Helper\Http\Controllers\AccountSwitcherController::class, 'syncSession'])
+                ->name('sync-session');
+            Route::post('/sync-token', [\AuthService\Helper\Http\Controllers\AccountSwitcherController::class, 'syncToken'])
+                ->name('sync-token');
         });
     }
 }

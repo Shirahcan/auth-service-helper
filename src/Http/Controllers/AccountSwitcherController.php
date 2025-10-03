@@ -198,4 +198,99 @@ class AccountSwitcherController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Sync session state from iframe widget
+     *
+     * This endpoint receives session state updates from the iframe widget
+     * and synchronizes them with the Laravel session.
+     */
+    public function syncSession(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'is_authenticated' => 'required|boolean',
+                'current_user' => 'nullable|array',
+                'accounts' => 'nullable|array'
+            ]);
+
+            $isAuthenticated = $request->input('is_authenticated');
+            $currentUser = $request->input('current_user');
+            $accounts = $request->input('accounts', []);
+
+            if ($isAuthenticated && $currentUser) {
+                // Update session with current user and accounts
+                session([
+                    'auth_user' => $currentUser,
+                    'auth_accounts' => $accounts,
+                    'last_activity' => now()->timestamp
+                ]);
+
+                \Log::debug('Session synced from iframe widget', [
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                    'account_count' => count($accounts)
+                ]);
+            } else {
+                // Clear session if not authenticated
+                session()->forget(['auth_user', 'auth_accounts']);
+
+                \Log::debug('Session cleared from iframe widget sync');
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Session synchronized successfully'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to sync session from iframe', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to sync session: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Sync auth token from iframe widget
+     *
+     * This endpoint receives token refresh events from the iframe widget
+     * and updates the Laravel session with the new token.
+     */
+    public function syncToken(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'token' => 'required|string'
+            ]);
+
+            $token = $request->input('token');
+
+            // Update Laravel session with new token
+            session([
+                'auth_token' => $token,
+                'last_activity' => now()->timestamp
+            ]);
+
+            \Log::debug('Auth token synced from iframe widget');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Token synchronized successfully'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to sync token from iframe', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to sync token: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

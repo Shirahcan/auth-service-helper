@@ -2,87 +2,66 @@
 
 namespace AuthService\Helper\View\Components;
 
-use AuthService\Helper\Services\AuthServiceClient;
 use Illuminate\View\Component;
 
+/**
+ * Iframe-based Account Switcher Component
+ *
+ * This component embeds the secure iframe-based account switcher widget from the auth-service.
+ * It provides a simple wrapper for the AccountSwitcherClient JavaScript library with
+ * comprehensive session synchronization between the iframe widget and the Laravel application.
+ *
+ * Previous Implementation: Custom server-rendered component (migrated to iframe on 2025-10-03)
+ */
 class AccountSwitcher extends Component
 {
     public string $authUrl;
     public string $apiKey;
-    public ?string $roles;
-    public ?string $id;
-    public array $accounts;
-    public ?array $activeAccount;
-    public ?array $primaryAccount;
-    public bool $isLoggedIn;
+    public string $serviceSlug;
+    public string $containerId;
+    public bool $autoResize;
+    public int $minHeight;
+    public ?int $maxHeight;
+    public bool $dialogsEnabled;
+    public bool $reloadOnSwitch;
+    public bool $spaSupport;
 
     /**
      * Create a new component instance.
+     *
+     * @param string|null $authUrl Auth service base URL
+     * @param string|null $apiKey Auth service API key
+     * @param string|null $serviceSlug Auth service slug
+     * @param string|null $containerId Container element ID
+     * @param bool $autoResize Enable automatic iframe height adjustment
+     * @param int $minHeight Minimum iframe height in pixels
+     * @param int|null $maxHeight Maximum iframe height in pixels (null = unlimited)
+     * @param bool $dialogsEnabled Enable default Material Design dialogs
+     * @param bool $reloadOnSwitch Reload page when account is switched
+     * @param bool $spaSupport Enable SPA navigation support
      */
     public function __construct(
         ?string $authUrl = null,
         ?string $apiKey = null,
-        ?string $roles = null,
-        ?string $id = null
+        ?string $serviceSlug = null,
+        ?string $containerId = null,
+        bool $autoResize = true,
+        int $minHeight = 200,
+        ?int $maxHeight = null,
+        bool $dialogsEnabled = true,
+        bool $reloadOnSwitch = true,
+        bool $spaSupport = false
     ) {
-        $this->authUrl = $authUrl ?? config('authservice.auth_service_base_url');
-        $this->apiKey = $apiKey ?? config('authservice.auth_service_api_key');
-        $this->roles = $roles;
-        $this->id = $id ?? 'account-switcher';
-
-        // Fetch session accounts
-        $sessionData = $this->fetchSessionAccounts();
-        $this->accounts = $sessionData['accounts'] ?? [];
-        $this->activeAccount = $sessionData['active_account'] ?? null;
-        $this->primaryAccount = $sessionData['primary_account'] ?? null;
-        $this->isLoggedIn = count($this->accounts) > 0;
-    }
-
-    /**
-     * Fetch session accounts from auth service
-     */
-    private function fetchSessionAccounts(): array
-    {
-        try {
-            $token = session('auth_token');
-
-            if (!$token) {
-                return [
-                    'accounts' => [],
-                    'active_account' => null,
-                    'primary_account' => null
-                ];
-            }
-
-            $client = app(AuthServiceClient::class);
-            $response = $client->getSessionAccounts($token);
-
-            if (!($response['success'] ?? false)) {
-                return [
-                    'accounts' => [],
-                    'active_account' => null,
-                    'primary_account' => null
-                ];
-            }
-
-            $session = $response['data']['session'] ?? [];
-
-            return [
-                'accounts' => $session['accounts'] ?? [],
-                'active_account' => $session['active_account'] ?? null,
-                'primary_account' => $session['primary_account'] ?? null
-            ];
-        } catch (\Exception $e) {
-            \Log::warning('Failed to fetch session accounts for AccountSwitcher', [
-                'error' => $e->getMessage()
-            ]);
-
-            return [
-                'accounts' => [],
-                'active_account' => null,
-                'primary_account' => null
-            ];
-        }
+        $this->authUrl = $authUrl ?? config('authservice.auth_service_base_url') ?? '';
+        $this->apiKey = $apiKey ?? config('authservice.auth_service_api_key') ?? '';
+        $this->serviceSlug = $serviceSlug ?? config('authservice.service_slug') ?? '';
+        $this->containerId = $containerId ?? 'account-switcher-' . uniqid();
+        $this->autoResize = $autoResize;
+        $this->minHeight = $minHeight;
+        $this->maxHeight = $maxHeight;
+        $this->dialogsEnabled = $dialogsEnabled;
+        $this->reloadOnSwitch = $reloadOnSwitch;
+        $this->spaSupport = $spaSupport;
     }
 
     /**
@@ -91,14 +70,16 @@ class AccountSwitcher extends Component
     public function render()
     {
         return view('authservice::components.account-switcher', [
-            'id' => $this->id,
             'authUrl' => $this->authUrl,
             'apiKey' => $this->apiKey,
-            'roles' => $this->roles,
-            'accounts' => $this->accounts,
-            'activeAccount' => $this->activeAccount,
-            'primaryAccount' => $this->primaryAccount,
-            'isLoggedIn' => $this->isLoggedIn,
+            'serviceSlug' => $this->serviceSlug,
+            'containerId' => $this->containerId,
+            'autoResize' => $this->autoResize,
+            'minHeight' => $this->minHeight,
+            'maxHeight' => $this->maxHeight,
+            'dialogsEnabled' => $this->dialogsEnabled,
+            'reloadOnSwitch' => $this->reloadOnSwitch,
+            'spaSupport' => $this->spaSupport,
         ]);
     }
 }
