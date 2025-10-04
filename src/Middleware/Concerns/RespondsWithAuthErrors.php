@@ -19,9 +19,9 @@ trait RespondsWithAuthErrors
      * Returns redirect to login for web requests
      *
      * @param string $message The error message to display
-     * @return Response
+     * @return mixed
      */
-    protected function unauthorizedResponse(string $message): Response
+    protected function unauthorizedResponse(string $message): mixed
     {
         if (request()->expectsJson()) {
             return response()->json([
