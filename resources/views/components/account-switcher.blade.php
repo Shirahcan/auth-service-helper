@@ -56,6 +56,18 @@
 
                 const result = await response.json();
 
+                // Dispatch custom event with session data and sync result
+                window.dispatchEvent(new CustomEvent('authservice-session-synced', {
+                    detail: {
+                        session: session,           // Original session data from iframe
+                        syncResult: result,         // Response from sync-session endpoint
+                        isAuthenticated: session.isAuthenticated,
+                        currentUser: session.currentUser,
+                        accounts: session.accounts,
+                        shouldReload: result.should_reload
+                    }
+                }));
+
                 // Reload page if account changed (new account added or switched)
                 if (result.should_reload) {
                     console.log('[AccountSwitcher] Account change detected, reloading page...');

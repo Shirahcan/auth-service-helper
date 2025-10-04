@@ -176,6 +176,34 @@
     </div>
 
     <script>
+        // Login configuration
+        const loginConfig = {
+            requiredRoles: @json(config('authservice.login_roles')),
+            serviceSlug: '{{ config("authservice.service_slug") }}',
+            redirectUrl: '{{ config("authservice.redirect_after_login") }}',
+            authUrl: '{{ config("authservice.auth_service_base_url") }}'
+        };
+
+        /**
+         * Check if user has required roles (mirrors PHP logic)
+         */
+        function hasRequiredRoles(userRoles, requiredRoles, serviceSlug) {
+            if (!requiredRoles || requiredRoles.length === 0) {
+                return true; // No role restrictions
+            }
+
+            const expandedRoles = [];
+            requiredRoles.forEach(role => {
+                expandedRoles.push(role);
+                if (serviceSlug) {
+                    expandedRoles.push(`${serviceSlug}:${role}`);
+                }
+            });
+            expandedRoles.push('super-admin', 'admin');
+
+            return userRoles.some(role => expandedRoles.includes(role));
+        }
+
         async function initiateLogin() {
             try {
                 // Show loading state
@@ -241,38 +269,82 @@
         }
 
         function showError(message) {
-        // Create and show error notification
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'fixed top-4 right-4 bg-red-50 border border-red-200 rounded-xl p-4 shadow-lg z-50 max-w-sm';
-        errorDiv.innerHTML = `
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.732 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                    </svg>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm font-medium text-red-800">${message}</p>
-                </div>
-                <div class="ml-auto pl-3">
-                    <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-red-400 hover:text-red-600">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            // Create and show error notification
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'fixed top-4 right-4 bg-red-50 border border-red-200 rounded-xl p-4 shadow-lg z-50 max-w-sm';
+            errorDiv.innerHTML = `
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.732 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
                         </svg>
-                    </button>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-red-800">${message}</p>
+                    </div>
+                    <div class="ml-auto pl-3">
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-red-400 hover:text-red-600">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
 
-        document.body.appendChild(errorDiv);
+            document.body.appendChild(errorDiv);
 
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (errorDiv.parentNode) {
-                errorDiv.remove();
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.remove();
+                }
+            }, 5000);
+        }
+
+        /**
+         * Listen for session sync events and auto-redirect on successful authentication
+         */
+        window.addEventListener('authservice-session-synced', (event) => {
+            const { isAuthenticated, currentUser, shouldReload } = event.detail;
+
+            console.log('[Login] Session synced event received:', {
+                isAuthenticated,
+                hasUser: !!currentUser,
+                shouldReload
+            });
+
+            // Only process if user is authenticated
+            if (!isAuthenticated || !currentUser) {
+                console.log('[Login] User not authenticated, staying on login page');
+                return;
             }
-        }, 5000);
-    }
+
+            // Check if user has required roles
+            const userRoles = currentUser.roles || [];
+            const hasAccess = hasRequiredRoles(
+                userRoles,
+                loginConfig.requiredRoles,
+                loginConfig.serviceSlug
+            );
+
+            if (hasAccess) {
+                // User is authenticated with valid roles - redirect
+                console.log('[Login] Authentication successful with valid roles, redirecting to:', loginConfig.redirectUrl);
+                window.location.href = loginConfig.redirectUrl || '/';
+            } else {
+                // User authenticated but lacks required roles - show error
+                console.error('[Login] User lacks required roles:', {
+                    userRoles,
+                    requiredRoles: loginConfig.requiredRoles
+                });
+                showError(
+                    `Access denied. Required roles: ${loginConfig.requiredRoles.join(', ')}`
+                );
+            }
+        });
+
+        console.log('[Login] Page initialized, waiting for authentication...');
     </script>
 
     <!-- Hidden Account Switcher IFRAME for ADD_ACCOUNT flow -->
