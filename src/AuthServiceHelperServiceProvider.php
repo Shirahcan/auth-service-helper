@@ -6,6 +6,7 @@ use AuthService\Helper\Auth\SessionGuard;
 use AuthService\Helper\Auth\SessionUserProvider;
 use AuthService\Helper\Commands\InstallCommand;
 use AuthService\Helper\Http\Controllers\AuthController;
+use AuthService\Helper\Middleware\Authenticate;
 use AuthService\Helper\Middleware\HasRoleMiddleware;
 use AuthService\Helper\Middleware\TrustedServiceMiddleware;
 use AuthService\Helper\Services\AuthServiceClient;
@@ -64,8 +65,9 @@ class AuthServiceHelperServiceProvider extends ServiceProvider
 
         // Register middleware
         $router = $this->app['router'];
-        $router->aliasMiddleware('authservice.trusted', TrustedServiceMiddleware::class);
+        $router->aliasMiddleware('authservice.auth', Authenticate::class);
         $router->aliasMiddleware('authservice.role', HasRoleMiddleware::class);
+        $router->aliasMiddleware('authservice.trusted', TrustedServiceMiddleware::class);
 
         // Register custom auth guard and provider
         $this->registerAuthSystem();

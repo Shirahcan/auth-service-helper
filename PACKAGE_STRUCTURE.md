@@ -27,8 +27,11 @@ auth-service-helper/
 │   │       ├── AuthController.php               # Authentication controller
 │   │       └── AccountSwitcherController.php    # Account switcher controller
 │   ├── Middleware/
+│   │   ├── Authenticate.php                     # Authentication middleware
 │   │   ├── HasRoleMiddleware.php                # Role-based route protection
-│   │   └── TrustedServiceMiddleware.php         # Service trust validation
+│   │   ├── TrustedServiceMiddleware.php         # Service trust validation
+│   │   └── Concerns/
+│   │       └── RespondsWithAuthErrors.php       # Shared auth response trait
 │   ├── Services/
 │   │   └── AuthServiceClient.php                # HTTP client for auth service
 │   ├── Auth/
@@ -78,8 +81,10 @@ auth-service-helper/
 - **AccountSwitcherController**: Manages account switching, session sync, and multi-account operations
 
 ### Middleware
+- **Authenticate**: Simple authentication guard requiring logged-in users
+- **HasRoleMiddleware**: Advanced role-based access control with service-scoped roles and global admin support
 - **TrustedServiceMiddleware**: Validates service-to-service trust relationships via auth service API
-- **HasRoleMiddleware**: Protects routes by checking user roles (supports multiple roles with OR logic)
+- **RespondsWithAuthErrors (Trait)**: Shared response handling for authentication failures across middleware
 
 ### Auth System
 - **SessionGuard**: Custom Laravel auth guard for session-based authentication
@@ -192,11 +197,15 @@ AUTH_SERVICE_REDIRECT_AFTER_LOGIN=/dashboard
 
 ### Protecting Routes
 ```php
-// Single role
+// Require authentication only
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware('authservice.auth');
+
+// Require specific role
 Route::get('/admin', [AdminController::class, 'index'])
     ->middleware('authservice.role:admin');
 
-// Multiple roles (OR logic)
+// Require one of multiple roles (OR logic)
 Route::get('/management', [Controller::class, 'index'])
     ->middleware('authservice.role:admin,manager');
 

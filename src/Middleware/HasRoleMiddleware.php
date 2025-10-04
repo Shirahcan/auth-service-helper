@@ -2,12 +2,14 @@
 
 namespace AuthService\Helper\Middleware;
 
+use AuthService\Helper\Middleware\Concerns\RespondsWithAuthErrors;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class HasRoleMiddleware
 {
+    use RespondsWithAuthErrors;
     /**
      * Handle an incoming request - validates that the authenticated user has the required role(s)
      *
@@ -58,24 +60,7 @@ class HasRoleMiddleware
     }
 
     /**
-     * Return unauthorized response
-     */
-    protected function unauthorizedResponse(string $message): Response
-    {
-        if (request()->expectsJson()) {
-            return response()->json([
-                'success' => false,
-                'message' => $message,
-                'errors' => ['auth' => 'User is not authenticated']
-            ], Response::HTTP_UNAUTHORIZED);
-        }
-
-        return response()->redirectToRoute('auth.login')
-            ->with('error', $message);
-    }
-
-    /**
-     * Return forbidden response
+     * Return forbidden response for insufficient permissions
      */
     protected function forbiddenResponse(array $requiredRoles): Response
     {

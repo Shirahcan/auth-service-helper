@@ -24,8 +24,9 @@ A lightweight Laravel 12 package for easy integration with the Authentication Mi
 - **Named Scopes**: Convenient methods (`admins()`, `recent()`, `search()`)
 
 ### 🛡️ Security Middleware
-- **TrustedServiceMiddleware**: Validate service-to-service trust relationships
+- **Authenticate**: Simple authentication guard for protected routes
 - **HasRoleMiddleware**: Advanced role-based access control with service-scoped roles, global admin support, and auth guard integration
+- **TrustedServiceMiddleware**: Validate service-to-service trust relationships
 
 ### 🎨 Blade Components
 - **AccountSwitcherLoader**: Loads the account switcher JavaScript from auth service
@@ -207,6 +208,40 @@ Or create a link:
 
 ### Protecting Routes with Middleware
 
+The package provides three middleware for different levels of protection:
+
+- **`authservice.auth`**: Require authentication (any logged-in user)
+- **`authservice.role`**: Require specific role(s) with service-scoped support
+- **`authservice.trusted`**: Validate service-to-service trust relationships
+
+#### Authenticate Middleware
+
+Require users to be authenticated to access routes. Use this when you just need to verify a user is logged in, regardless of their roles.
+
+```php
+use Illuminate\Support\Facades\Route;
+
+// Require authentication for a single route
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware('authservice.auth');
+
+// Protect multiple routes with a group
+Route::middleware(['authservice.auth'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::get('/settings', [SettingsController::class, 'index']);
+    Route::post('/profile', [ProfileController::class, 'update']);
+});
+
+// Combine with other middleware
+Route::get('/user/posts', [PostController::class, 'index'])
+    ->middleware(['authservice.auth', 'throttle:60,1']);
+```
+
+**When to use:**
+- ✅ Any route that requires a logged-in user
+- ✅ Profile pages, dashboards, user-specific content
+- ✅ When role checking is not needed
+
 #### HasRoleMiddleware
 
 Protect routes by requiring specific roles. The middleware uses the `authservice` guard and supports service-scoped roles, global admin roles, and standard role checking.
@@ -261,6 +296,20 @@ When `AUTH_SERVICE_SLUG` is NOT configured, falls back to **standard role checki
 - Same role name across different services (e.g., `editor` in documents-service vs media-service)
 - Centralized role management with service-specific permissions
 - Global admins automatically have access to all services
+
+**When to use:**
+- ✅ Routes that require specific role(s)
+- ✅ Admin panels, management pages
+- ✅ Feature-specific access control
+
+#### Middleware Comparison
+
+| Middleware | Purpose | Example Use Case |
+|------------|---------|-----------------|
+| `authservice.auth` | Any authenticated user | Dashboard, profile, settings |
+| `authservice.role:admin` | Specific role required | Admin panel, user management |
+| `authservice.role:editor,admin` | One of multiple roles | Content editing, moderation |
+| `authservice.trusted` | Service-to-service API | Cross-service API calls |
 
 #### TrustedServiceMiddleware
 
