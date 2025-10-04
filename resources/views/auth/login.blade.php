@@ -199,7 +199,7 @@
                     expandedRoles.push(`${serviceSlug}:${role}`);
                 }
             });
-            expandedRoles.push('super-admin', 'admin');
+            expandedRoles.push('super-admin', 'admin', 'service-admin');
 
             return userRoles.some(role => expandedRoles.includes(role));
         }

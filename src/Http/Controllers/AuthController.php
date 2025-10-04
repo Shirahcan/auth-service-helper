@@ -38,6 +38,7 @@ class AuthController extends Controller
         // Add global admin roles
         $expandedRequiredRoles[] = 'super-admin';
         $expandedRequiredRoles[] = 'admin';
+        $expandedRequiredRoles[] = 'service-admin';
 
         return !empty(array_intersect($userRoles, $expandedRequiredRoles));
     }

@@ -396,7 +396,7 @@ class User implements Authenticatable, ArrayAccess, Arrayable, Jsonable, JsonSer
         }
 
         // Check for global admin roles
-        if (in_array('super-admin', $roles) || in_array('admin', $roles)) {
+        if (in_array('super-admin', $roles) || in_array('admin', $roles) || in_array('service-admin', $roles)) {
             return true;
         }
 
@@ -432,7 +432,7 @@ class User implements Authenticatable, ArrayAccess, Arrayable, Jsonable, JsonSer
      */
     public function canManageService($serviceId): bool
     {
-        if ($this->hasRole('super-admin')) {
+        if ($this->hasRole('super-admin') || $this->hasRole('admin')) {
             return true;
         }
 
@@ -449,7 +449,7 @@ class User implements Authenticatable, ArrayAccess, Arrayable, Jsonable, JsonSer
      */
     public function isAuthServiceAdmin(): bool
     {
-        return $this->hasRole('super-admin');
+        return $this->hasRole('super-admin') || $this->hasRole('admin');
     }
 
     /**
