@@ -89,7 +89,12 @@
                     Secure iframe-based widget with comprehensive session syncing
                 </p>
             </div>
-            <x-authservice-account-switcher />
+            <div>
+                <x-authservice-account-avatar />
+                <div style="width: 448px">
+                    <x-authservice-account-switcher />
+                </div>
+            </div>
         </div>
 
         @if ($user = auth('authservice')->user())

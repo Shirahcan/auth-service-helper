@@ -8,6 +8,7 @@ use AuthService\Helper\Http\Controllers\AuthController;
 use AuthService\Helper\Middleware\HasRoleMiddleware;
 use AuthService\Helper\Middleware\TrustedServiceMiddleware;
 use AuthService\Helper\Services\AuthServiceClient;
+use AuthService\Helper\View\Components\AccountAvatar;
 use AuthService\Helper\View\Components\AccountSwitcher;
 use AuthService\Helper\View\Components\AccountSwitcherLoader;
 use Illuminate\Support\Facades\Auth;
@@ -58,6 +59,7 @@ class AuthServiceHelperServiceProvider extends ServiceProvider
         // Register Blade components
         Blade::component('authservice-account-switcher-loader', AccountSwitcherLoader::class);
         Blade::component('authservice-account-switcher', AccountSwitcher::class);
+        Blade::component('authservice-account-avatar', AccountAvatar::class);
 
         // Register middleware
         $router = $this->app['router'];
