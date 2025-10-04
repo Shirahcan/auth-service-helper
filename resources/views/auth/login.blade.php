@@ -191,49 +191,47 @@
                 <span>Connecting to Authentication Service...</span>
             `;
 
-            // Generate landing session for login
-            const response = await fetch('{{ route("auth.generate") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    action: 'login',
-                    callback_url: window.location.origin + '{{ config("authservice.callback_url") }}',
-                    metadata: {
-                        service: '{{ config("authservice.service_slug") }}',
-                        return_url: window.location.origin + '{{ config("authservice.redirect_after_login") }}'
-                    }
-                })
-            });
+            // Wait for account switcher to initialize
+            const accountSwitcher = await waitForAccountSwitcher();
 
-            const data = await response.json();
-
-            if (data.success && data.data.auth_url) {
-                // Show redirect message
-                button.innerHTML = `
-                    <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                    </svg>
-                    <span>Redirecting to Secure Login...</span>
-                `;
-
-                // Small delay for UX, then redirect
-                setTimeout(() => {
-                    window.location.href = data.data.auth_url;
-                }, 500);
-            } else {
-                // Handle error
-                resetButton(button, originalHTML);
-                showError(data.message || 'Authentication service unavailable. Please try again later.');
+            if (!accountSwitcher) {
+                throw new Error('Account switcher not initialized');
             }
+
+            // Show redirect message
+            button.innerHTML = `
+                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                </svg>
+                <span>Redirecting to Secure Login...</span>
+            `;
+
+            // Call addAccount method to trigger ADD_ACCOUNT message flow
+            await accountSwitcher.addAccount();
+
         } catch (error) {
             console.error('Login error:', error);
             const button = document.getElementById('loginButton');
             resetButton(button, originalHTML);
             showError('Unable to connect to authentication service. Please check your connection and try again.');
         }
+    }
+
+    // Wait for account switcher to be initialized
+    function waitForAccountSwitcher(maxWaitMs = 5000) {
+        return new Promise((resolve) => {
+            const startTime = Date.now();
+
+            const checkInterval = setInterval(() => {
+                if (window.accountSwitcher) {
+                    clearInterval(checkInterval);
+                    resolve(window.accountSwitcher);
+                } else if (Date.now() - startTime > maxWaitMs) {
+                    clearInterval(checkInterval);
+                    resolve(null);
+                }
+            }, 100);
+        });
     }
 
     function resetButton(button, originalHTML) {
@@ -276,5 +274,10 @@
         }, 5000);
     }
     </script>
+
+    <!-- Hidden Account Switcher IFRAME for ADD_ACCOUNT flow -->
+    <div style="display: none;">
+        <x-authservice-account-switcher />
+    </div>
 </body>
 </html>
