@@ -15,8 +15,9 @@ auth-service-helper/
 │       │   ├── login.blade.php                  # Login page view
 │       │   └── redirect-with-token.blade.php    # Token storage & redirect view
 │       └── components/
-│           ├── account-switcher-loader.blade.php # Script loader component
-│           └── account-switcher.blade.php        # Account switcher component
+│           ├── account-switcher-loader.blade.php # Script loader (legacy)
+│           ├── account-switcher.blade.php        # Iframe account switcher
+│           └── account-avatar.blade.php          # Account avatar component
 ├── src/
 │   ├── AuthServiceHelperServiceProvider.php    # Laravel service provider
 │   ├── Http/
@@ -29,8 +30,9 @@ auth-service-helper/
 │   │   └── AuthServiceClient.php                # HTTP client for auth service
 │   └── View/
 │       └── Components/
-│           ├── AccountSwitcher.php              # Account switcher component
-│           └── AccountSwitcherLoader.php        # Loader component
+│           ├── AccountSwitcher.php              # Iframe account switcher
+│           ├── AccountSwitcherLoader.php        # Loader (legacy)
+│           └── AccountAvatar.php                # Account avatar component
 ├── tests/
 │   ├── Feature/
 │   │   └── RoutesTest.php                       # Route registration tests
@@ -65,8 +67,9 @@ auth-service-helper/
   - Check service trust relationships
 
 ### Blade Components
-- **AccountSwitcherLoader**: Loads the account switcher JavaScript from auth service
-- **AccountSwitcher**: Embeds the account switcher web component
+- **AccountSwitcher**: Secure iframe-based account switcher with session synchronization and auto-reload
+- **AccountAvatar**: Compact clickable avatar for NAV bars with session sync
+- **AccountSwitcherLoader**: Legacy script loader (deprecated)
 
 ### Views
 - **login.blade.php**: Modern, responsive login page with role-based filtering support
@@ -138,11 +141,16 @@ Route::post('/api/action', [ServiceController::class, 'action'])
 
 ### Using Blade Components
 ```blade
-<!-- In layout head -->
-<x-authservice-account-switcher-loader />
+<!-- Account switcher (iframe-based) -->
+<x-authservice-account-switcher />
 
-<!-- In navigation -->
-<x-authservice-account-switcher roles="admin" />
+<!-- Account avatar in NAV -->
+<x-authservice-account-avatar :size="36" target-id="account-dropdown" />
+
+<!-- Hidden dropdown with switcher -->
+<div id="account-dropdown" style="display: none;">
+    <x-authservice-account-switcher />
+</div>
 ```
 
 ### Accessing Session Data
@@ -164,7 +172,8 @@ $loginTime = session('login_time');
 ✅ Drop-in login page with modern UI
 ✅ Role-based access control middleware
 ✅ Service trust validation middleware
-✅ Account switcher integration
+✅ Iframe-based account switcher with session sync
+✅ Account avatar component for NAV bars
 ✅ Token management (localStorage + sessionStorage)
 ✅ Session lifecycle management
 ✅ GitHub-based installation

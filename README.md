@@ -29,7 +29,8 @@ A lightweight Laravel 12 package for easy integration with the Authentication Mi
 
 ### 🎨 Blade Components
 - **AccountSwitcherLoader**: Loads the account switcher JavaScript from auth service
-- **AccountSwitcher**: Embeds the account switcher web component
+- **AccountSwitcher**: Secure iframe-based account switcher with session synchronization
+- **AccountAvatar**: Compact clickable avatar for NAV bars with session sync
 
 ### ⚡ Key Benefits
 - **Lightweight**: Focused on web flows, not full API wrapping
@@ -184,32 +185,123 @@ public function crossService(Request $request)
 
 ### Blade Components
 
-#### Account Switcher Loader
+The package provides three Blade components for account management and user display.
 
-Add to your layout's `<head>` section:
+#### Account Switcher (IFRAME-based)
 
-```html
-<x-authservice-account-switcher-loader />
+A secure, iframe-based account switcher that provides multi-account session management with automatic synchronization between the iframe widget and your Laravel application.
 
-<!-- Or with custom auth URL -->
-<x-authservice-account-switcher-loader
-    :auth-url="env('AUTH_SERVICE_BASE_URL')"
-    :auto-load="true" />
-```
+**Features:**
+- Secure JWT-based token authentication
+- PostMessage protocol for cross-origin communication
+- Automatic session synchronization with Laravel backend
+- Material Design interactive dialogs
+- Auto-resize support
+- Multi-account session management
+- Automatic page reload on account changes
 
-#### Account Switcher Component
+**Basic Usage:**
 
-Add to your layout where you want the account switcher to appear:
-
-```html
+```blade
+<!-- Simple usage with defaults -->
 <x-authservice-account-switcher />
 
-<!-- Or with custom configuration -->
+<!-- Full configuration -->
 <x-authservice-account-switcher
-    :auth-url="env('AUTH_SERVICE_BASE_URL')"
-    :api-key="env('AUTH_SERVICE_API_KEY')"
-    roles="admin,manager"
-    id="my-account-switcher" />
+    :auth-url="config('authservice.auth_service_base_url')"
+    :api-key="config('authservice.auth_service_api_key')"
+    :service-slug="config('authservice.service_slug')"
+    container-id="account-switcher"
+    :auto-resize="true"
+    :min-height="200"
+    :max-height="600"
+    :dialogs-enabled="true"
+    :reload-on-switch="true"
+    :spa-support="false"
+/>
+```
+
+**Props:**
+- `auth-url` - Auth service base URL (default: from config)
+- `api-key` - Auth service API key (default: from config)
+- `service-slug` - Service identifier (default: from config)
+- `container-id` - Container element ID (default: auto-generated)
+- `auto-resize` - Enable automatic iframe height adjustment (default: true)
+- `min-height` - Minimum iframe height in pixels (default: 200)
+- `max-height` - Maximum iframe height in pixels (default: null/unlimited)
+- `dialogs-enabled` - Enable Material Design dialogs (default: true)
+- `reload-on-switch` - Reload page when account switches (default: true)
+- `spa-support` - Enable SPA navigation support (default: false)
+
+**How It Works:**
+1. Embeds a secure iframe from the auth-service
+2. Listens for SESSION_CHANGED messages via postMessage
+3. Syncs session data to Laravel backend via `/auth/sync-session`
+4. Automatically reloads page when account changes detected
+5. Supports add account, switch account, and logout operations
+
+#### Account Avatar
+
+A compact, clickable avatar component for NAV bars that displays the current user's avatar and synchronizes with the iframe account switcher.
+
+**Features:**
+- Displays user avatar (image or initials) when logged in
+- Shows generic profile icon when logged out or iframe not loaded
+- Listens for SESSION_CHANGED messages from iframe
+- Configurable size and click behavior
+- Smooth transitions and hover effects
+
+**Basic Usage:**
+
+```blade
+<!-- Simple usage with defaults (40px) -->
+<x-authservice-account-avatar />
+
+<!-- Custom size -->
+<x-authservice-account-avatar :size="48" />
+
+<!-- Toggle dropdown on click -->
+<x-authservice-account-avatar target-id="account-dropdown" />
+
+<!-- Custom click handler -->
+<x-authservice-account-avatar onClick="showAccountMenu()" />
+
+<!-- Full example in NAV -->
+<nav>
+    <div class="nav-items">
+        <x-authservice-account-avatar
+            :size="36"
+            target-id="account-switcher-dropdown"
+        />
+    </div>
+</nav>
+
+<!-- Hidden dropdown with account switcher -->
+<div id="account-switcher-dropdown" style="display: none;">
+    <x-authservice-account-switcher />
+</div>
+```
+
+**Props:**
+- `auth-url` - Auth service URL for origin verification (default: from config)
+- `size` - Avatar diameter in pixels (default: 40)
+- `container-id` - Unique container ID (default: auto-generated)
+- `target-id` - Element ID to toggle visibility on click (optional)
+- `onClick` - Custom JavaScript function to execute on click (optional)
+
+**How It Works:**
+1. Displays generic profile icon by default
+2. Listens for SESSION_CHANGED postMessage from iframe
+3. Updates to show user avatar/initials when logged in
+4. Emits 'avatar-clicked' custom event on click
+5. Optionally toggles visibility of target element
+
+#### Account Switcher Loader (Legacy)
+
+**Note:** This loader is for the deprecated custom account switcher implementation. For new projects, use the iframe-based `<x-authservice-account-switcher />` component instead.
+
+```blade
+<x-authservice-account-switcher-loader />
 ```
 
 ### Laravel Auth Integration

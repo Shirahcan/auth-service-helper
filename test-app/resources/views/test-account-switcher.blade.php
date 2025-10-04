@@ -90,8 +90,8 @@
                 </p>
             </div>
             <div>
-                <x-authservice-account-avatar />
-                <div style="width: 448px">
+                <x-authservice-account-avatar target-id="account-dropdown" />
+                <div id="account-dropdown" style="width: 448px; display: none">
                     <x-authservice-account-switcher />
                 </div>
             </div>
