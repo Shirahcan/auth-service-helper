@@ -217,8 +217,29 @@ class AccountSwitcherController extends Controller
             $isAuthenticated = $request->input('is_authenticated');
             $currentUser = $request->input('current_user');
             $accounts = $request->input('accounts', []);
+            $shouldReload = false;
+
+            // Get current session state
+            $storedUser = session('auth_user');
+            $wasAuthenticated = !empty($storedUser);
 
             if ($isAuthenticated && $currentUser) {
+                // Check if account has changed (new account added or switched)
+                // The iframe sends 'id' field, not 'uuid'
+                $currentUserUuid = $currentUser['id'] ?? $currentUser['uuid'] ?? null;
+                $storedUserUuid = $storedUser['id'] ?? $storedUser['uuid'] ?? null;
+
+                // Reload if:
+                // 1. No previous user in session (first login after page load)
+                // 2. User UUID changed (account switched or new account added)
+                if (!$storedUser || $currentUserUuid !== $storedUserUuid) {
+                    $shouldReload = true;
+                    \Log::debug('Account change detected, page reload needed', [
+                        'previous_uuid' => $storedUserUuid,
+                        'new_uuid' => $currentUserUuid
+                    ]);
+                }
+
                 // Update session with current user and accounts
                 session([
                     'auth_user' => $currentUser,
@@ -227,11 +248,20 @@ class AccountSwitcherController extends Controller
                 ]);
 
                 \Log::debug('Session synced from iframe widget', [
-                    'user_uuid' => $currentUser['uuid'] ?? null,
-                    'account_count' => count($accounts)
+                    'user_uuid' => $currentUserUuid,
+                    'account_count' => count($accounts),
+                    'should_reload' => $shouldReload
                 ]);
             } else {
-                // Clear session if not authenticated
+                // Not authenticated - clear session
+                // Reload if we were previously authenticated (logout occurred)
+                if ($wasAuthenticated) {
+                    $shouldReload = true;
+                    \Log::debug('Logout detected, page reload needed', [
+                        'previous_user' => $storedUser['uuid'] ?? null
+                    ]);
+                }
+
                 session()->forget(['auth_user', 'auth_accounts']);
 
                 \Log::debug('Session cleared from iframe widget sync');
@@ -239,7 +269,8 @@ class AccountSwitcherController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Session synchronized successfully'
+                'message' => 'Session synchronized successfully',
+                'should_reload' => $shouldReload
             ]);
         } catch (\Exception $e) {
             \Log::error('Failed to sync session from iframe', [

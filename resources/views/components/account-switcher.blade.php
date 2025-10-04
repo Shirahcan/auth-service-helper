@@ -39,7 +39,7 @@
 
             // Sync session state to Laravel backend
             try {
-                await fetch('{{ route('auth.sync-session') }}', {
+                const response = await fetch('{{ route('auth.sync-session') }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -52,6 +52,14 @@
                         accounts: session.accounts
                     })
                 });
+
+                const result = await response.json();
+
+                // Reload page if account changed (new account added or switched)
+                if (result.should_reload) {
+                    console.log('[AccountSwitcher] Account change detected, reloading page...');
+                    window.location.reload();
+                }
             } catch (error) {
                 console.error('[AccountSwitcher] Failed to sync session:', error);
             }

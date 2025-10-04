@@ -180,14 +180,14 @@
 
             <h3>⚙️ Component Configuration</h3>
             <p>The component supports various configuration options:</p>
-            <pre>{{ '<x-authservice-account-switcher
+            {{-- <pre>{{ '<x-authservice-account-switcher
     :auto-resize="true"
     :min-height="200"
     :max-height="600"
     :dialogs-enabled="true"
     :reload-on-switch="true"
     :spa-support="false"
-/>' }}</pre>
+/>' }}</pre> --}}
 
             <h3>📊 Current Session Data</h3>
             <pre>{{ json_encode(session()->all(), JSON_PRETTY_PRINT) }}</pre>
