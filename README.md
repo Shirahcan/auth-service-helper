@@ -25,7 +25,7 @@ A lightweight Laravel 12 package for easy integration with the Authentication Mi
 
 ### 🛡️ Security Middleware
 - **TrustedServiceMiddleware**: Validate service-to-service trust relationships
-- **HasRoleMiddleware**: Protect routes with role-based access control (supports multiple roles with OR logic)
+- **HasRoleMiddleware**: Advanced role-based access control with service-scoped roles, global admin support, and auth guard integration
 
 ### 🎨 Blade Components
 - **AccountSwitcherLoader**: Loads the account switcher JavaScript from auth service
@@ -209,7 +209,7 @@ Or create a link:
 
 #### HasRoleMiddleware
 
-Protect routes by requiring specific roles:
+Protect routes by requiring specific roles. The middleware uses the `authservice` guard and supports service-scoped roles, global admin roles, and standard role checking.
 
 ```php
 use Illuminate\Support\Facades\Route;
@@ -229,10 +229,38 @@ Route::middleware(['authservice.role:admin'])->group(function () {
 });
 ```
 
-The middleware checks for:
-- Exact role match (e.g., `admin`)
-- Service-scoped roles (e.g., `your-service:admin`)
-- Global admin roles (`super-admin`, `admin`)
+**How Role Checking Works:**
+
+When `AUTH_SERVICE_SLUG` is configured, the middleware performs **service-scoped role checking**:
+
+1. **Exact role match**: User has role `editor` → Grants access to `authservice.role:editor`
+2. **Service-scoped roles**: User has `documents-service:editor` → Grants access to `authservice.role:editor` (when `AUTH_SERVICE_SLUG=documents-service`)
+3. **Global admin roles**: User has `super-admin` or `admin` → Grants access to ANY role requirement
+
+When `AUTH_SERVICE_SLUG` is NOT configured, falls back to **standard role checking** (exact match only).
+
+**Examples:**
+
+```php
+// User has role: 'editor'
+// ✅ Passes: authservice.role:editor
+// ❌ Fails: authservice.role:admin
+
+// User has role: 'documents-service:editor'
+// (with AUTH_SERVICE_SLUG=documents-service)
+// ✅ Passes: authservice.role:editor
+// ✅ Passes: authservice.role:documents-service:editor
+
+// User has role: 'super-admin'
+// ✅ Passes: authservice.role:editor (or any other role)
+// ✅ Passes: authservice.role:admin,manager (any role requirement)
+```
+
+**Benefits of Service-Scoped Roles:**
+
+- Same role name across different services (e.g., `editor` in documents-service vs media-service)
+- Centralized role management with service-specific permissions
+- Global admins automatically have access to all services
 
 #### TrustedServiceMiddleware
 

@@ -11,6 +11,11 @@ class HasRoleMiddleware
     /**
      * Handle an incoming request - validates that the authenticated user has the required role(s)
      *
+     * Supports both standard roles and service-scoped roles:
+     * - Standard: 'admin', 'manager'
+     * - Service-scoped: 'documents-service:editor'
+     * - Global admin roles always have access
+     *
      * @param  \Illuminate\Http\Request  $request
      * @param  \Closure  $next
      * @param  string  ...$roles  Required roles (OR logic - user needs at least one)
@@ -18,29 +23,38 @@ class HasRoleMiddleware
      */
     public function handle(Request $request, Closure $next, string ...$roles)
     {
-        // Get authenticated user from session
-        $user = session('auth_user');
+        // Get authenticated user via the authservice guard
+        $user = auth('authservice')->user();
 
         if (!$user) {
             return $this->unauthorizedResponse('Authentication required');
         }
-
-        // Extract user roles from session data
-        $userRoles = $user['user']['roles'] ?? [];
 
         if (empty($roles)) {
             // No specific roles required, just authentication
             return $next($request);
         }
 
-        // Check if user has any of the required roles
-        $hasRole = !empty(array_intersect($roles, $userRoles));
+        // Get current service slug for service-scoped role checking
+        $currentService = config('authservice.service_slug');
 
-        if (!$hasRole) {
-            return $this->forbiddenResponse($roles);
+        // Check if user has any of the required roles
+        foreach ($roles as $role) {
+            if ($currentService) {
+                // Use service-scoped role checking (includes exact match, scoped roles, and global admin)
+                if ($user->hasServiceRole($currentService, $role)) {
+                    return $next($request);
+                }
+            } else {
+                // Fallback to standard role checking when service slug is not configured
+                if ($user->hasRole($role)) {
+                    return $next($request);
+                }
+            }
         }
 
-        return $next($request);
+        // User doesn't have any of the required roles
+        return $this->forbiddenResponse($roles);
     }
 
     /**
