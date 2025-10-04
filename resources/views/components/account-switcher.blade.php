@@ -29,6 +29,7 @@
         serviceSlug: '{{ $serviceSlug }}',
         authBaseUrl: '{{ $authUrl }}',
         container: '#{{ $containerId }}',
+        roles: {!! $roles ? json_encode($roles) : 'null' !!},
         autoResize: {{ $autoResize ? 'true' : 'false' }},
         minHeight: {{ $minHeight }},
         maxHeight: {{ $maxHeight ? $maxHeight : 'null' }},

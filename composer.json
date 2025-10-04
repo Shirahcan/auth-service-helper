@@ -3,7 +3,7 @@
     "description": "Lightweight Laravel package for easy integration with Authentication Microservice - web flows, middleware, and UI components",
     "type": "library",
     "license": "MIT",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "keywords": [
         "laravel",
         "authentication",

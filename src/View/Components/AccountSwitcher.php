@@ -25,6 +25,7 @@ class AccountSwitcher extends Component
     public bool $dialogsEnabled;
     public bool $reloadOnSwitch;
     public bool $spaSupport;
+    public ?array $roles;
 
     /**
      * Create a new component instance.
@@ -39,6 +40,7 @@ class AccountSwitcher extends Component
      * @param bool $dialogsEnabled Enable default Material Design dialogs
      * @param bool $reloadOnSwitch Reload page when account is switched
      * @param bool $spaSupport Enable SPA navigation support
+     * @param array|null $roles Optional roles to restrict account switcher access
      */
     public function __construct(
         ?string $authUrl = null,
@@ -50,7 +52,8 @@ class AccountSwitcher extends Component
         ?int $maxHeight = null,
         bool $dialogsEnabled = true,
         bool $reloadOnSwitch = true,
-        bool $spaSupport = false
+        bool $spaSupport = false,
+        ?array $roles = null
     ) {
         $this->authUrl = $authUrl ?? config('authservice.auth_service_base_url') ?? '';
         $this->apiKey = $apiKey ?? config('authservice.auth_service_api_key') ?? '';
@@ -62,6 +65,7 @@ class AccountSwitcher extends Component
         $this->dialogsEnabled = $dialogsEnabled;
         $this->reloadOnSwitch = $reloadOnSwitch;
         $this->spaSupport = $spaSupport;
+        $this->roles = $roles ?? config('authservice.login_roles');
     }
 
     /**
@@ -80,6 +84,7 @@ class AccountSwitcher extends Component
             'dialogsEnabled' => $this->dialogsEnabled,
             'reloadOnSwitch' => $this->reloadOnSwitch,
             'spaSupport' => $this->spaSupport,
+            'roles' => $this->roles,
         ]);
     }
 }
