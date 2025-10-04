@@ -4,6 +4,7 @@ namespace AuthService\Helper;
 
 use AuthService\Helper\Auth\SessionGuard;
 use AuthService\Helper\Auth\SessionUserProvider;
+use AuthService\Helper\Commands\InstallCommand;
 use AuthService\Helper\Http\Controllers\AuthController;
 use AuthService\Helper\Middleware\HasRoleMiddleware;
 use AuthService\Helper\Middleware\TrustedServiceMiddleware;
@@ -71,6 +72,13 @@ class AuthServiceHelperServiceProvider extends ServiceProvider
 
         // Register routes
         $this->registerRoutes();
+
+        // Register commands
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                InstallCommand::class,
+            ]);
+        }
     }
 
     /**

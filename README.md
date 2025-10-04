@@ -43,7 +43,9 @@ A lightweight Laravel 12 package for easy integration with the Authentication Mi
 
 ## 📦 Installation
 
-### Step 1: Install via Composer
+### Quick Install (Recommended)
+
+#### Step 1: Install via Composer
 
 Add the repository to your `composer.json`:
 
@@ -67,13 +69,64 @@ Then run:
 composer install
 ```
 
-### Step 2: Publish Configuration
+#### Step 2: Run the Install Command
+
+Use the install command to set up the package quickly:
+
+```bash
+# Basic installation (publishes config only)
+php artisan authservice:install
+
+# Install with views
+php artisan authservice:install --with-views
+
+# Install and configure auth guard in config/auth.php
+php artisan authservice:install --configure-guard
+
+# Install and set authservice as default guard
+php artisan authservice:install --as-default
+
+# Combine flags as needed
+php artisan authservice:install --with-views --as-default
+```
+
+**Available Flags:**
+- `--with-views`: Publish views in addition to config files
+- `--configure-guard`: Add authservice guard and provider to `config/auth.php`
+- `--as-default`: Set authservice as the default guard (implies `--configure-guard`)
+
+#### Step 3: Configure Environment Variables
+
+Add to your `.env` file:
+
+```env
+# Required
+AUTH_SERVICE_BASE_URL=http://localhost:8000
+AUTH_SERVICE_API_KEY=your_service_api_key_here
+AUTH_SERVICE_SLUG=your-service-slug
+
+# Optional
+AUTH_SERVICE_TIMEOUT=30
+AUTH_SERVICE_LOGIN_ROLES=admin,manager
+AUTH_SERVICE_CALLBACK_URL=/auth/callback
+AUTH_SERVICE_REDIRECT_AFTER_LOGIN=/dashboard
+```
+
+### Manual Installation
+
+If you prefer manual setup or need more control:
+
+#### Step 1: Install via Composer
+
+Follow the composer installation steps above.
+
+#### Step 2: Publish Configuration
 
 ```bash
 php artisan vendor:publish --tag=authservice-config
 ```
 
-### Step 3: Configure Environment Variables
+#### Step 3: Configure Environment Variables
 
 Add to your `.env` file:
 
@@ -91,13 +144,39 @@ AUTH_SERVICE_CALLBACK_URL=/auth/callback
 AUTH_SERVICE_REDIRECT_AFTER_LOGIN=/dashboard
 ```
 
-### Step 4 (Optional): Publish Views for Customization
+#### Step 4 (Optional): Publish Views for Customization
 
 ```bash
 php artisan vendor:publish --tag=authservice-views
 ```
 
 Views will be published to `resources/views/vendor/authservice/`.
+
+#### Step 5 (Optional): Configure Auth Guard
+
+If you want to use the authservice guard, add to `config/auth.php`:
+
+```php
+'defaults' => [
+    'guard' => 'authservice', // Optional: Set as default guard
+    'passwords' => 'users',
+],
+
+'guards' => [
+    'authservice' => [
+        'driver' => 'authservice',
+        'provider' => 'authservice',
+    ],
+    // ... other guards
+],
+
+'providers' => [
+    'authservice' => [
+        'driver' => 'authservice',
+    ],
+    // ... other providers
+],
+```
 
 ## 🎯 Usage
 

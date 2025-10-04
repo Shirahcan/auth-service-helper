@@ -20,14 +20,28 @@ auth-service-helper/
 │           └── account-avatar.blade.php          # Account avatar component
 ├── src/
 │   ├── AuthServiceHelperServiceProvider.php    # Laravel service provider
+│   ├── Commands/
+│   │   └── InstallCommand.php                   # Installation command
 │   ├── Http/
 │   │   └── Controllers/
-│   │       └── AuthController.php               # Authentication controller
+│   │       ├── AuthController.php               # Authentication controller
+│   │       └── AccountSwitcherController.php    # Account switcher controller
 │   ├── Middleware/
 │   │   ├── HasRoleMiddleware.php                # Role-based route protection
 │   │   └── TrustedServiceMiddleware.php         # Service trust validation
 │   ├── Services/
 │   │   └── AuthServiceClient.php                # HTTP client for auth service
+│   ├── Auth/
+│   │   ├── SessionGuard.php                     # Custom auth guard
+│   │   └── SessionUserProvider.php              # Custom user provider
+│   ├── Models/
+│   │   └── User.php                             # User model
+│   ├── Query/
+│   │   └── UserQueryBuilder.php                 # User query builder
+│   ├── Collections/
+│   │   └── UserCollection.php                   # User collection
+│   ├── Helpers/
+│   │   └── auth_helpers.php                     # Helper functions
 │   └── View/
 │       └── Components/
 │           ├── AccountSwitcher.php              # Iframe account switcher
@@ -51,12 +65,30 @@ auth-service-helper/
 ### Configuration
 - **config/authservice.php**: All package settings including auth service URL, API key, service slug, timeout, optional login roles, callback URL, and redirect destination
 
+### Commands
+- **InstallCommand**: Artisan command for easy package setup
+  - Publishes configuration files
+  - Optionally publishes views
+  - Configures auth guard in config/auth.php
+  - Sets authservice as default guard (optional)
+  - Displays helpful setup instructions
+
 ### Controllers
 - **AuthController**: Handles login display, landing session generation, authentication callback, and logout
+- **AccountSwitcherController**: Manages account switching, session sync, and multi-account operations
 
 ### Middleware
 - **TrustedServiceMiddleware**: Validates service-to-service trust relationships via auth service API
 - **HasRoleMiddleware**: Protects routes by checking user roles (supports multiple roles with OR logic)
+
+### Auth System
+- **SessionGuard**: Custom Laravel auth guard for session-based authentication
+- **SessionUserProvider**: Custom user provider for the authservice guard
+
+### Models & Query Builder
+- **User**: Full Authenticatable user model with role checking and API interactions
+- **UserQueryBuilder**: Eloquent-like query builder for fetching users from auth service
+- **UserCollection**: Extended collection with user-specific methods
 
 ### Services
 - **AuthServiceClient**: HTTP client for interacting with auth service API
@@ -65,6 +97,14 @@ auth-service-helper/
   - Validate tokens
   - Logout users
   - Check service trust relationships
+  - Query users with filters and pagination
+
+### Helpers
+- **auth_helpers.php**: Convenient helper functions
+  - `authservice_user()` - Get authenticated user
+  - `authservice_id()` - Get user ID
+  - `authservice_check()` - Check if authenticated
+  - `authservice_guest()` - Check if guest
 
 ### Blade Components
 - **AccountSwitcher**: Secure iframe-based account switcher with session synchronization and auto-reload
@@ -81,6 +121,12 @@ Auto-registered routes:
 - POST `/auth/generate` - Generate authentication landing session
 - GET `/auth/callback` - Handle authentication callback
 - POST `/auth/logout` - Logout user
+- GET `/auth/session-accounts` - Get user's session accounts
+- POST `/auth/switch-account` - Switch active account
+- POST `/auth/create-add-account-session` - Create add account session
+- DELETE `/auth/remove-account/{uuid}` - Remove account from session
+- POST `/auth/sync-session` - Sync session from iframe
+- POST `/auth/sync-token` - Sync token from iframe
 
 ## Installation
 
@@ -102,7 +148,27 @@ Add to composer.json:
 Then run:
 ```bash
 composer install
+
+# Quick install (recommended)
+php artisan authservice:install --with-views --as-default
+
+# Or manual install
 php artisan vendor:publish --tag=authservice-config
+```
+
+### Install Command Options
+```bash
+# Basic installation (publishes config only)
+php artisan authservice:install
+
+# Install with views
+php artisan authservice:install --with-views
+
+# Install and configure auth guard
+php artisan authservice:install --configure-guard
+
+# Install and set as default guard
+php artisan authservice:install --as-default
 ```
 
 ## Environment Variables
@@ -153,6 +219,30 @@ Route::post('/api/action', [ServiceController::class, 'action'])
 </div>
 ```
 
+### Using Auth System
+```php
+// Using the authservice guard
+$user = auth('authservice')->user();
+$id = auth('authservice')->id();
+
+// Using helper functions
+$user = authservice_user();
+$id = authservice_id();
+if (authservice_check()) {
+    // User is authenticated
+}
+
+// Check roles
+if ($user->hasRole('admin')) {
+    // User is admin
+}
+
+// Query users
+$admins = User::where('is_admin', true)->get();
+$user = User::find('uuid-here');
+$users = User::paginate(20);
+```
+
 ### Accessing Session Data
 ```php
 $token = session('auth_token');
@@ -176,6 +266,10 @@ $loginTime = session('login_time');
 ✅ Account avatar component for NAV bars
 ✅ Token management (localStorage + sessionStorage)
 ✅ Session lifecycle management
+✅ Custom Laravel auth guard and provider
+✅ Eloquent-like user query builder
+✅ Helper functions for quick access
+✅ Artisan install command for easy setup
 ✅ GitHub-based installation
 ✅ Fully documented and tested
 
