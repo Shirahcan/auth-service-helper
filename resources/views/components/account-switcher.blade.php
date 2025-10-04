@@ -15,7 +15,7 @@
     Previous Implementation: Custom HTML/CSS/JS (migrated to iframe on 2025-10-03)
 --}}
 
-<div id="{{ $containerId }}" style="width: 100%; min-height: {{ $minHeight }}px;"></div>
+<div id="{{ $containerId }}" style="width: 100%; min-width: {{ $minWidth }}px; min-height: {{ $minHeight }}px;"></div>
 
 <script src="{{ $authUrl }}/js/account-switcher-client.js"></script>
 

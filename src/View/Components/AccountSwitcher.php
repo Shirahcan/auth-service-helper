@@ -20,6 +20,7 @@ class AccountSwitcher extends Component
     public string $serviceSlug;
     public string $containerId;
     public bool $autoResize;
+    public ?int $minWidth;
     public int $minHeight;
     public ?int $maxHeight;
     public bool $dialogsEnabled;
@@ -48,6 +49,7 @@ class AccountSwitcher extends Component
         ?string $serviceSlug = null,
         ?string $containerId = null,
         bool $autoResize = true,
+        ?int $minWidth = 380,
         int $minHeight = 200,
         ?int $maxHeight = null,
         bool $dialogsEnabled = true,
@@ -60,6 +62,7 @@ class AccountSwitcher extends Component
         $this->serviceSlug = $serviceSlug ?? config('authservice.service_slug') ?? '';
         $this->containerId = $containerId ?? 'account-switcher-' . uniqid();
         $this->autoResize = $autoResize;
+        $this->minWidth = $minWidth;
         $this->minHeight = $minHeight;
         $this->maxHeight = $maxHeight;
         $this->dialogsEnabled = $dialogsEnabled;
@@ -79,6 +82,7 @@ class AccountSwitcher extends Component
             'serviceSlug' => $this->serviceSlug,
             'containerId' => $this->containerId,
             'autoResize' => $this->autoResize,
+            'minWidth' => $this->minWidth,
             'minHeight' => $this->minHeight,
             'maxHeight' => $this->maxHeight,
             'dialogsEnabled' => $this->dialogsEnabled,
