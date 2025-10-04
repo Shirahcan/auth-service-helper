@@ -74,6 +74,8 @@
     const content = document.getElementById(containerId + '-content');
 
     let currentUser = null;
+    let isPopupOpen = false;
+    let outsideClickListener = null;
 
     /**
      * Get initials from name (same logic as IFRAME)
@@ -138,6 +140,74 @@
     }
 
     /**
+     * Open popup and setup outside click handlers
+     */
+    function openPopup(target) {
+        target.style.display = 'block';
+        isPopupOpen = true;
+        setupOutsideClickHandler();
+    }
+
+    /**
+     * Close popup and remove outside click handlers
+     */
+    function closePopup(target) {
+        target.style.display = 'none';
+        isPopupOpen = false;
+        removeOutsideClickHandler();
+    }
+
+    /**
+     * Setup outside click handler to close popup
+     */
+    function setupOutsideClickHandler() {
+        if (outsideClickListener) {
+            removeOutsideClickHandler();
+        }
+
+        outsideClickListener = (event) => {
+            const target = document.getElementById(targetId);
+            if (!target) return;
+
+            const clickedInsidePopup = target.contains(event.target);
+            const clickedAvatar = container.contains(event.target);
+
+            if (!clickedInsidePopup && !clickedAvatar) {
+                closePopup(target);
+            }
+        };
+
+        // Delay adding listener to prevent immediate closure from same click
+        setTimeout(() => {
+            document.addEventListener('click', outsideClickListener);
+            document.addEventListener('keydown', handleEscapeKey);
+        }, 0);
+    }
+
+    /**
+     * Remove outside click handler
+     */
+    function removeOutsideClickHandler() {
+        if (outsideClickListener) {
+            document.removeEventListener('click', outsideClickListener);
+            document.removeEventListener('keydown', handleEscapeKey);
+            outsideClickListener = null;
+        }
+    }
+
+    /**
+     * Handle ESC key to close popup
+     */
+    function handleEscapeKey(event) {
+        if (event.key === 'Escape' && isPopupOpen && targetId) {
+            const target = document.getElementById(targetId);
+            if (target) {
+                closePopup(target);
+            }
+        }
+    }
+
+    /**
      * Handle click events
      */
     function handleClick() {
@@ -152,8 +222,11 @@
         if (targetId) {
             const target = document.getElementById(targetId);
             if (target) {
-                const isHidden = target.style.display === 'none' || !target.style.display;
-                target.style.display = isHidden ? 'block' : 'none';
+                if (isPopupOpen) {
+                    closePopup(target);
+                } else {
+                    openPopup(target);
+                }
             }
         }
 
