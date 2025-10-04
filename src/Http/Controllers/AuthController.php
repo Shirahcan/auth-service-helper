@@ -59,7 +59,7 @@ class AuthController extends Controller
             }
         }
 
-        return view('authservice::auth.login', compact('returnUrl'));
+        return view('authservice::auth.login');
     }
 
     /**
