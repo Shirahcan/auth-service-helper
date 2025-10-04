@@ -62,7 +62,7 @@ class HasRoleMiddleware
     /**
      * Return forbidden response for insufficient permissions
      */
-    protected function forbiddenResponse(array $requiredRoles): Response
+    protected function forbiddenResponse(array $requiredRoles): mixed
     {
         $rolesText = implode(', ', $requiredRoles);
         $message = "Access denied. Required role(s): {$rolesText}";

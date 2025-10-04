@@ -70,7 +70,7 @@ return [
     | Where to redirect users after successful login
     |
     */
-    'redirect_after_login' => env('AUTH_SERVICE_REDIRECT_AFTER_LOGIN', '/dashboard'),
+    'redirect_after_login' => env('AUTH_SERVICE_REDIRECT_AFTER_LOGIN', '/'),
 
     /*
     |--------------------------------------------------------------------------

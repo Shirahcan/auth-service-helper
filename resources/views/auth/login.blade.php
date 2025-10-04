@@ -176,71 +176,71 @@
     </div>
 
     <script>
-    async function initiateLogin() {
-        try {
-            // Show loading state
-            const button = document.getElementById('loginButton');
-            const originalHTML = button.innerHTML;
-            button.disabled = true;
-            button.classList.add('opacity-75', 'cursor-not-allowed');
-            button.innerHTML = `
-                <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Connecting to Authentication Service...</span>
-            `;
+        async function initiateLogin() {
+            try {
+                // Show loading state
+                const button = document.getElementById('loginButton');
+                const originalHTML = button.innerHTML;
+                button.disabled = true;
+                button.classList.add('opacity-75', 'cursor-not-allowed');
+                button.innerHTML = `
+                    <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Connecting to Authentication Service...</span>
+                `;
 
-            // Wait for account switcher to initialize
-            const accountSwitcher = await waitForAccountSwitcher();
+                // Wait for account switcher to initialize
+                const accountSwitcher = await waitForAccountSwitcher();
 
-            if (!accountSwitcher) {
-                throw new Error('Account switcher not initialized');
-            }
-
-            // Show redirect message
-            button.innerHTML = `
-                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                </svg>
-                <span>Redirecting to Secure Login...</span>
-            `;
-
-            // Call addAccount method to trigger ADD_ACCOUNT message flow
-            await accountSwitcher.addAccount();
-
-        } catch (error) {
-            console.error('Login error:', error);
-            const button = document.getElementById('loginButton');
-            resetButton(button, originalHTML);
-            showError('Unable to connect to authentication service. Please check your connection and try again.');
-        }
-    }
-
-    // Wait for account switcher to be initialized
-    function waitForAccountSwitcher(maxWaitMs = 5000) {
-        return new Promise((resolve) => {
-            const startTime = Date.now();
-
-            const checkInterval = setInterval(() => {
-                if (window.accountSwitcher) {
-                    clearInterval(checkInterval);
-                    resolve(window.accountSwitcher);
-                } else if (Date.now() - startTime > maxWaitMs) {
-                    clearInterval(checkInterval);
-                    resolve(null);
+                if (!accountSwitcher) {
+                    throw new Error('Account switcher not initialized');
                 }
-            }, 100);
-        });
-    }
 
-    function resetButton(button, originalHTML) {
-        button.disabled = false;
-        button.classList.remove('opacity-75', 'cursor-not-allowed');
-        button.innerHTML = originalHTML;
-    }
+                // Show redirect message
+                button.innerHTML = `
+                    <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                    </svg>
+                    <span>Redirecting to Secure Login...</span>
+                `;
 
-    function showError(message) {
+                // Call addAccount method to trigger ADD_ACCOUNT message flow
+                await accountSwitcher.addAccount();
+
+            } catch (error) {
+                console.error('Login error:', error);
+                const button = document.getElementById('loginButton');
+                resetButton(button, originalHTML);
+                showError('Unable to connect to authentication service. Please check your connection and try again.');
+            }
+        }
+
+        // Wait for account switcher to be initialized
+        function waitForAccountSwitcher(maxWaitMs = 5000) {
+            return new Promise((resolve) => {
+                const startTime = Date.now();
+
+                const checkInterval = setInterval(() => {
+                    if (window.accountSwitcher) {
+                        clearInterval(checkInterval);
+                        resolve(window.accountSwitcher);
+                    } else if (Date.now() - startTime > maxWaitMs) {
+                        clearInterval(checkInterval);
+                        resolve(null);
+                    }
+                }, 100);
+            });
+        }
+
+        function resetButton(button, originalHTML) {
+            button.disabled = false;
+            button.classList.remove('opacity-75', 'cursor-not-allowed');
+            button.innerHTML = originalHTML;
+        }
+
+        function showError(message) {
         // Create and show error notification
         const errorDiv = document.createElement('div');
         errorDiv.className = 'fixed top-4 right-4 bg-red-50 border border-red-200 rounded-xl p-4 shadow-lg z-50 max-w-sm';

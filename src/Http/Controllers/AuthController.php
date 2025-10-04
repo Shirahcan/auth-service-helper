@@ -54,12 +54,12 @@ class AuthController extends Controller
 
             // Check if user has required roles
             if ($this->hasRequiredRoles($user->getRoles(), $requiredRoles)) {
-                $redirectUrl = config('authservice.redirect_after_login', '/dashboard');
+                $redirectUrl = config('authservice.redirect_after_login', '/');
                 return redirect($redirectUrl)->with('info', 'You are already logged in');
             }
         }
 
-        return view('authservice::auth.login');
+        return view('authservice::auth.login', compact('returnUrl'));
     }
 
     /**
