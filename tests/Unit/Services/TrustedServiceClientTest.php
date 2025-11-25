@@ -17,31 +17,29 @@ class TrustedServiceClientTest extends TestCase
 {
     protected TrustedServiceClient $client;
     protected $httpMock;
-    protected $configMock;
     protected $logMock;
+    protected array $originalEnv = [];
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Mock Config facade
-        $this->configMock = Mockery::mock('alias:Illuminate\Support\Facades\Config');
+        // Set up environment variables for the test service
+        // Store original values to restore later
+        $envKeys = [
+            'TEST_SERVICE_TRUST_KEY',
+            'TEST_SERVICE_SERVICE_URL',
+            'TEST_SERVICE_API_KEY',
+        ];
 
-        // Set up default test configuration
-        $this->configMock->shouldReceive('get')
-            ->with('authservice.trust_keys.test-service', Mockery::any())
-            ->andReturn('test-trust-key-123')
-            ->byDefault();
+        foreach ($envKeys as $key) {
+            $this->originalEnv[$key] = getenv($key);
+        }
 
-        $this->configMock->shouldReceive('get')
-            ->with('authservice.service_urls.test-service', Mockery::any())
-            ->andReturn('https://test-service.local')
-            ->byDefault();
-
-        $this->configMock->shouldReceive('get')
-            ->with('authservice.api_keys.test-service', Mockery::any())
-            ->andReturn('test-api-key-456')
-            ->byDefault();
+        // Set test environment variables
+        putenv('TEST_SERVICE_TRUST_KEY=test-trust-key-123');
+        putenv('TEST_SERVICE_SERVICE_URL=https://test-service.local');
+        putenv('TEST_SERVICE_API_KEY=test-api-key-456');
 
         // Mock Http facade
         $this->httpMock = Mockery::mock('alias:Illuminate\Support\Facades\Http');
@@ -52,6 +50,20 @@ class TrustedServiceClientTest extends TestCase
         $this->logMock->shouldReceive('error')->andReturnNull()->byDefault();
 
         $this->client = new TrustedServiceClient();
+    }
+
+    protected function tearDown(): void
+    {
+        // Restore original environment variables
+        foreach ($this->originalEnv as $key => $value) {
+            if ($value === false) {
+                putenv($key);
+            } else {
+                putenv("{$key}={$value}");
+            }
+        }
+
+        parent::tearDown();
     }
 
     public function test_successful_get_request()
@@ -492,9 +504,7 @@ class TrustedServiceClientTest extends TestCase
         $this->client->makeTrustedGetRequest('test-service', 'api/test');
 
         // Test with base URL that has trailing slash
-        $this->configMock->shouldReceive('get')
-            ->with('authservice.service_urls.test-service', Mockery::any())
-            ->andReturn('https://test-service.local/');
+        putenv('TEST_SERVICE_SERVICE_URL=https://test-service.local/');
 
         $pendingRequest3 = $this->createMockPendingRequest($mockResponse);
         $this->httpMock->shouldReceive('withHeaders')
@@ -508,12 +518,8 @@ class TrustedServiceClientTest extends TestCase
 
     public function test_api_key_is_optional()
     {
-        $this->markTestSkipped('Skipping test that requires env() mocking without Orchestra Testbench');
-
-        // Remove API key from config
-        $this->configMock->shouldReceive('get')
-            ->with('authservice.api_keys.test-service', Mockery::any())
-            ->andReturn(null);
+        // Remove API key from environment
+        putenv('TEST_SERVICE_API_KEY');
 
         $mockResponse = $this->createMockResponse(['success' => true], 200);
 

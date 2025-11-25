@@ -3,16 +3,9 @@
 namespace Tests;
 
 use PHPUnit\Framework\TestCase as BaseTestCase;
-use Mockery;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
 abstract class TestCase extends BaseTestCase
 {
-    /**
-     * Clean up Mockery after each test
-     */
-    protected function tearDown(): void
-    {
-        Mockery::close();
-        parent::tearDown();
-    }
+    use MockeryPHPUnitIntegration;
 }

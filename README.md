@@ -826,6 +826,70 @@ Or logout programmatically:
 return redirect()->route('auth.logout');
 ```
 
+## Trust Key Management (AuthServiceClient)
+
+The `AuthServiceClient` provides methods for managing service trust keys programmatically.
+
+### Validate a Trust Key
+
+```php
+use AuthService\Helper\Services\AuthServiceClient;
+
+$client = app(AuthServiceClient::class);
+
+$result = $client->validateTrustKey('trust_key_abc123...');
+
+if ($result['valid']) {
+    $callingService = $result['calling_service'];
+    $targetService = $result['target_service'];
+    $permissions = $result['permissions'];
+}
+```
+
+### Create a Trust Key
+
+```php
+$trustKey = $client->createTrustKey(
+    serviceId: 'auth-service',
+    trustedServiceId: 'documents-service',
+    keyData: [
+        'name' => 'Production API Key',
+        'expires_at' => '2025-12-31',
+        'permissions' => ['read', 'write'],
+    ]
+);
+
+// IMPORTANT: The plaintext key is only returned once!
+$plaintextKey = $trustKey['trust_key'];
+```
+
+### Get Trust Keys
+
+```php
+$keys = $client->getTrustKeys(
+    serviceId: 'auth-service',
+    trustedServiceId: 'documents-service',
+    filters: [
+        'is_active' => true,
+        'include_expired' => false,
+    ]
+);
+
+foreach ($keys as $key) {
+    echo $key['name'] . ': ' . $key['trust_key_prefix'] . '...';
+}
+```
+
+### Revoke a Trust Key
+
+```php
+$result = $client->revokeTrustKey(trustKeyId: 123);
+
+if ($result['success']) {
+    echo 'Key revoked at: ' . $result['revoked_at'];
+}
+```
+
 ## 🔑 Service Trust API Keys (Service-to-Service Communication)
 
 ### Overview
@@ -985,6 +1049,29 @@ public function index(Request $request)
 
     return response()->json(['users' => User::all()]);
 }
+```
+
+#### Caching Configuration
+
+Trust key validation results are cached by default to improve performance:
+
+```php
+// config/authservice.php
+return [
+    // Enable/disable caching (default: true)
+    'cache_trust_results' => env('AUTH_SERVICE_CACHE_TRUST_RESULTS', true),
+
+    // Cache TTL in seconds (default: 900 = 15 minutes)
+    'trust_cache_ttl' => env('AUTH_SERVICE_TRUST_CACHE_TTL', 900),
+];
+```
+
+To manually invalidate the cache for a specific trust key:
+
+```php
+use AuthService\Helper\Middleware\TrustedServiceMiddleware;
+
+TrustedServiceMiddleware::invalidateCache($trustKey);
 ```
 
 ### Security Best Practices

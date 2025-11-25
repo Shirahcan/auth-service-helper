@@ -90,6 +90,41 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Trust Verification Caching
+    |--------------------------------------------------------------------------
+    |
+    | Enable caching of trust key validation results to reduce API calls.
+    | This significantly improves performance for high-frequency
+    | service-to-service communication.
+    |
+    */
+    'cache_trust_results' => env('AUTH_SERVICE_CACHE_TRUST_RESULTS', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Trust Cache TTL
+    |--------------------------------------------------------------------------
+    |
+    | Time-to-live for cached trust validation results in seconds.
+    | Default is 900 seconds (15 minutes). Lower values provide better
+    | security (faster revocation) but more API calls.
+    |
+    */
+    'trust_cache_ttl' => env('AUTH_SERVICE_TRUST_CACHE_TTL', 900),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Trust Verification Endpoint
+    |--------------------------------------------------------------------------
+    |
+    | The API endpoint path for validating trust keys. This is appended
+    | to the auth_service_base_url when making validation requests.
+    |
+    */
+    'trust_verify_endpoint' => env('AUTH_SERVICE_TRUST_VERIFY_ENDPOINT', 'services/validate-trust-key'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Login Roles
     |--------------------------------------------------------------------------
     |

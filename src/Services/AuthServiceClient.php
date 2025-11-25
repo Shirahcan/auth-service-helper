@@ -278,6 +278,81 @@ class AuthServiceClient
     }
 
     /**
+     * Validate a service trust API key.
+     *
+     * @param string $trustKey The trust key to validate
+     * @return array Validation result with service details
+     * @throws \Exception If the request fails
+     */
+    public function validateTrustKey(string $trustKey): array
+    {
+        return $this->post('services/validate-trust-key', [], [
+            'headers' => [
+                'X-Trust-Key' => $trustKey
+            ],
+            'log_context' => ['operation' => 'validate_trust_key']
+        ]);
+    }
+
+    /**
+     * Create a new trust key for service-to-service communication.
+     *
+     * @param string $serviceId The service creating the key
+     * @param string $trustedServiceId The service receiving trust
+     * @param array $keyData Optional key data (name, expires_at, permissions)
+     * @return array The created trust key data (includes plaintext key only on creation)
+     * @throws \Exception If the request fails
+     */
+    public function createTrustKey(string $serviceId, string $trustedServiceId, array $keyData = []): array
+    {
+        return $this->post("services/{$serviceId}/trusted/{$trustedServiceId}/keys", $keyData, [
+            'log_context' => [
+                'operation' => 'create_trust_key',
+                'service_id' => $serviceId,
+                'trusted_service_id' => $trustedServiceId
+            ]
+        ]);
+    }
+
+    /**
+     * Get all trust keys for a service-to-service relationship.
+     *
+     * @param string $serviceId The service ID
+     * @param string $trustedServiceId The trusted service ID
+     * @param array $filters Optional filters (is_active, include_expired)
+     * @return array List of trust keys (without full key values)
+     * @throws \Exception If the request fails
+     */
+    public function getTrustKeys(string $serviceId, string $trustedServiceId, array $filters = []): array
+    {
+        return $this->get("services/{$serviceId}/trusted/{$trustedServiceId}/keys", [
+            'query' => $filters,
+            'log_context' => [
+                'operation' => 'get_trust_keys',
+                'service_id' => $serviceId,
+                'trusted_service_id' => $trustedServiceId
+            ]
+        ]);
+    }
+
+    /**
+     * Revoke a trust key.
+     *
+     * @param int $trustKeyId The trust key ID to revoke
+     * @return array Revocation result
+     * @throws \Exception If the request fails
+     */
+    public function revokeTrustKey(int $trustKeyId): array
+    {
+        return $this->delete("trust-keys/{$trustKeyId}", [
+            'log_context' => [
+                'operation' => 'revoke_trust_key',
+                'trust_key_id' => $trustKeyId
+            ]
+        ]);
+    }
+
+    /**
      * Get users with filters and pagination
      */
     public function getUsers(array $params = []): array

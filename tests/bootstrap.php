@@ -1,43 +1,22 @@
 <?php
 
-/**
- * Test bootstrap file
- * This file provides minimal Laravel helper functions needed for testing
- */
+require __DIR__ . '/../vendor/autoload.php';
 
-// Load vendor autoload
-require_once __DIR__ . '/../vendor/autoload.php';
-
-// Mock the config() helper function if it doesn't exist
-// (illuminate/support defines config() that uses app() which we don't have)
+// Define config() helper for testing if it doesn't exist
 if (!function_exists('config')) {
-    /**
-     * Get / set the specified configuration value.
-     *
-     * @param  array|string|null  $key
-     * @param  mixed  $default
-     * @return mixed
-     */
     function config($key = null, $default = null)
     {
-        return Illuminate\Support\Facades\Config::get($key, $default);
+        // This is a minimal implementation for testing purposes only
+        // In actual Laravel applications, this is provided by the framework
+        return $default;
     }
 }
 
-// Mock the route() helper function if it doesn't exist
-if (!function_exists('route')) {
-    /**
-     * Generate the URL to a named route.
-     *
-     * @param  string  $name
-     * @param  mixed  $parameters
-     * @param  bool  $absolute
-     * @return string
-     */
-    function route($name, $parameters = [], $absolute = true)
+// Define env() helper for testing if it doesn't exist
+if (!function_exists('env')) {
+    function env($key, $default = null)
     {
-        return Illuminate\Support\Facades\Route::has($name)
-            ? '/' . ltrim($name, '/')
-            : $name;
+        // This is a minimal implementation for testing purposes only
+        return $default;
     }
 }
