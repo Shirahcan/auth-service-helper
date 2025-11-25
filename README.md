@@ -28,6 +28,13 @@ A lightweight Laravel 12 package for easy integration with the Authentication Mi
 - **HasRoleMiddleware**: Advanced role-based access control with service-scoped roles, global admin support, and auth guard integration
 - **TrustedServiceMiddleware**: Validate service-to-service trust relationships
 
+### 🔑 Service Trust API Keys
+- **TrustedServiceClient**: Easy service-to-service HTTP requests with automatic trust key authentication
+- **Facade Support**: Simple `TrustedService::makeTrustedGetRequest()` syntax
+- **Permission-Based Access**: Protect routes with required permissions
+- **Flexible Configuration**: Environment variables or config-based setup
+- **Comprehensive Error Handling**: Clear error messages for debugging
+
 ### 🎨 Blade Components
 - **AccountSwitcherLoader**: Loads the account switcher JavaScript from auth service
 - **AccountSwitcher**: Secure iframe-based account switcher with session synchronization
@@ -818,6 +825,215 @@ Or logout programmatically:
 ```php
 return redirect()->route('auth.logout');
 ```
+
+## 🔑 Service Trust API Keys (Service-to-Service Communication)
+
+### Overview
+The Service Trust API Keys system enables secure service-to-service communication. Instead of sharing credentials or using complex OAuth flows, services can use pre-generated trust keys to authenticate requests.
+
+### TrustedServiceClient
+
+The `TrustedServiceClient` class provides an easy way to make authenticated HTTP requests to trusted services.
+
+#### Basic Usage
+
+```php
+use AuthService\Helper\Services\TrustedServiceClient;
+
+$client = new TrustedServiceClient();
+
+// Make a GET request
+$response = $client->makeTrustedGetRequest(
+    'documents-service',           // Service slug
+    '/api/v1/documents',          // Endpoint
+    ['status' => 'active'],       // Query parameters (optional)
+    [],                           // Additional headers (optional)
+    $userBearerToken              // Bearer token (optional)
+);
+
+if ($response->successful()) {
+    $documents = $response->json('data');
+}
+```
+
+#### HTTP Methods
+
+```php
+// GET request
+$response = $client->makeTrustedGetRequest($serviceSlug, $endpoint, $queryParams);
+
+// POST request
+$response = $client->makeTrustedPostRequest($serviceSlug, $endpoint, $data);
+
+// PUT request
+$response = $client->makeTrustedPutRequest($serviceSlug, $endpoint, $data);
+
+// PATCH request
+$response = $client->makeTrustedPatchRequest($serviceSlug, $endpoint, $data);
+
+// DELETE request
+$response = $client->makeTrustedDeleteRequest($serviceSlug, $endpoint, $data);
+```
+
+#### Using the Facade
+
+```php
+use AuthService\Helper\Facades\TrustedService;
+
+$response = TrustedService::makeTrustedGetRequest(
+    'documents-service',
+    '/api/v1/documents'
+);
+```
+
+#### Configuration Options
+
+```php
+$client = new TrustedServiceClient();
+
+// Set custom timeout (default: 30 seconds)
+$client->setTimeout(60);
+
+// Set retry attempts (default: 2 retries with 100ms delay)
+$client->setRetries(3, 200);
+
+// Disable automatic exception throwing on HTTP errors
+$client->throwOnError(false);
+
+// Chain configuration
+$response = $client
+    ->setTimeout(60)
+    ->setRetries(3, 200)
+    ->throwOnError(false)
+    ->makeTrustedGetRequest('service', '/endpoint');
+```
+
+### Configuration
+
+Add trusted services to your `config/authservice.php`:
+
+```php
+return [
+    // ... other config ...
+
+    'trust_keys' => [
+        'documents-service' => env('DOCUMENTS_SERVICE_TRUST_KEY'),
+        'consultancy-service' => env('CONSULTANCY_SERVICE_TRUST_KEY'),
+    ],
+
+    'service_urls' => [
+        'documents-service' => env('DOCUMENTS_SERVICE_SERVICE_URL', 'http://localhost:8001'),
+        'consultancy-service' => env('CONSULTANCY_SERVICE_SERVICE_URL', 'http://localhost:8002'),
+    ],
+
+    // Optional API keys for additional authentication
+    'api_keys' => [
+        'documents-service' => env('DOCUMENTS_SERVICE_API_KEY'),
+    ],
+];
+```
+
+Or use environment variables directly (the client will look these up automatically):
+
+```env
+DOCUMENTS_SERVICE_TRUST_KEY=your-trust-key-here
+DOCUMENTS_SERVICE_SERVICE_URL=https://documents.example.com
+DOCUMENTS_SERVICE_API_KEY=optional-api-key
+```
+
+### TrustedServiceMiddleware
+
+Protect your routes from unauthorized service requests using the `TrustedServiceMiddleware`.
+
+#### Basic Route Protection
+
+```php
+// In routes/api.php
+Route::middleware(['authservice.trusted'])->group(function () {
+    Route::get('/internal/users', [UserController::class, 'index']);
+});
+```
+
+#### With Permission Requirements
+
+```php
+// Single permission
+Route::middleware(['authservice.trusted:users:read'])->group(function () {
+    Route::get('/internal/users', [UserController::class, 'index']);
+});
+
+// Multiple permissions (all required)
+Route::middleware(['authservice.trusted:users:read,users:write'])->group(function () {
+    Route::post('/internal/users', [UserController::class, 'store']);
+});
+```
+
+#### Accessing Trust Information in Controllers
+
+```php
+public function index(Request $request)
+{
+    // Get trust data
+    $trustData = $request->get('service_trust');
+
+    // Access calling service information
+    $callingServiceSlug = $trustData['calling_service']['slug'];
+    $callingServiceName = $trustData['calling_service']['name'];
+
+    // Access permissions
+    $permissions = $trustData['permissions'];
+
+    return response()->json(['users' => User::all()]);
+}
+```
+
+### Security Best Practices
+
+1. **Never commit trust keys** - Always use environment variables
+2. **Rotate keys regularly** - Generate new keys and revoke old ones periodically
+3. **Use minimal permissions** - Only grant the permissions each service actually needs
+4. **Monitor usage** - Log all service-to-service requests for auditing
+5. **Set expiration dates** - Trust keys should have reasonable expiration periods
+
+### Error Handling
+
+```php
+use Illuminate\Http\Client\RequestException;
+
+try {
+    $response = $client->makeTrustedGetRequest('service', '/endpoint');
+
+    if ($response->successful()) {
+        return $response->json();
+    }
+
+    // Handle HTTP error responses
+    if ($response->status() === 401) {
+        // Invalid or expired trust key
+    } elseif ($response->status() === 403) {
+        // Insufficient permissions
+    }
+} catch (RequestException $e) {
+    // Network or connection error
+    Log::error('Service request failed', [
+        'error' => $e->getMessage()
+    ]);
+} catch (\Exception $e) {
+    // Configuration error (missing trust key or service URL)
+    Log::error('Configuration error', [
+        'error' => $e->getMessage()
+    ]);
+}
+```
+
+### Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| "Trust key not configured for service: {slug}" | Missing trust key in config/env | Add `{SLUG}_TRUST_KEY` to `.env` |
+| "Service URL not configured for: {slug}" | Missing service URL in config/env | Add `{SLUG}_SERVICE_URL` to `.env` |
+| HTTP 401 | Invalid or expired trust key | Verify key is correct and not expired |
+| HTTP 403 | Insufficient permissions | Check trust key permissions |
 
 ## ⚙️ Configuration
 

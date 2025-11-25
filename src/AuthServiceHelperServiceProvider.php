@@ -10,6 +10,7 @@ use AuthService\Helper\Middleware\Authenticate;
 use AuthService\Helper\Middleware\HasRoleMiddleware;
 use AuthService\Helper\Middleware\TrustedServiceMiddleware;
 use AuthService\Helper\Services\AuthServiceClient;
+use AuthService\Helper\Services\TrustedServiceClient;
 use AuthService\Helper\View\Components\AccountAvatar;
 use AuthService\Helper\View\Components\AccountSwitcher;
 use AuthService\Helper\View\Components\AccountSwitcherLoader;
@@ -34,6 +35,11 @@ class AuthServiceHelperServiceProvider extends ServiceProvider
         // Register AuthServiceClient as singleton
         $this->app->singleton(AuthServiceClient::class, function ($app) {
             return new AuthServiceClient();
+        });
+
+        // Register TrustedServiceClient as singleton
+        $this->app->singleton(TrustedServiceClient::class, function ($app) {
+            return new TrustedServiceClient();
         });
 
         // Load helper functions
