@@ -3,7 +3,7 @@
 namespace AuthService\Helper\Middleware;
 
 use AuthService\Helper\Services\AuthServiceClient;
-use Closure;
+use Closure; 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
