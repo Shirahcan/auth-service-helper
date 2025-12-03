@@ -88,20 +88,24 @@ class TrustedServiceMiddleware
 
         try {
             // Validate the trust key with caching
-            $validationData = $this->validateTrustKeyWithCache($trustKey);
+            $response = $this->validateTrustKeyWithCache($trustKey);
 
-            // Check if validation was successful
-            if (!($validationData['valid'] ?? false)) {
+            // Extract data from the response wrapper (auth service wraps in {success, data, ...})
+            $validationData = $response['data'] ?? $response;
+
+            // Check if validation was successful (auth service uses 'is_valid', not 'valid')
+            $isValid = $validationData['is_valid'] ?? $validationData['valid'] ?? false;
+            if (!$isValid) {
                 Log::warning('Invalid trust key used', [
                     'trust_key_hash' => hash('sha256', $trustKey),
                     'url' => $request->url(),
-                    'reason' => $validationData['message'] ?? 'Unknown reason',
+                    'reason' => $validationData['reason'] ?? $validationData['message'] ?? 'Unknown reason',
                 ]);
 
                 return response()->json([
                     'success' => false,
-                    'message' => $validationData['message'] ?? 'Invalid trust key',
-                    'errors' => ['trust_key' => $validationData['message'] ?? 'The provided trust key is invalid or has expired']
+                    'message' => $validationData['reason'] ?? $validationData['message'] ?? 'Invalid trust key',
+                    'errors' => ['trust_key' => $validationData['reason'] ?? $validationData['message'] ?? 'The provided trust key is invalid or has expired']
                 ], Response::HTTP_FORBIDDEN);
             }
 
@@ -244,13 +248,14 @@ class TrustedServiceMiddleware
      * - authservice.trust_cache_ttl: Cache TTL in seconds (default: 900 = 15 minutes)
      *
      * @param string $trustKey The trust key to validate
-     * @return array The validation result containing:
-     *               - valid: bool Whether the key is valid
-     *               - calling_service: string The calling service identifier
-     *               - target_service: string The target service identifier
-     *               - permissions: array The granted permissions
-     *               - trust_key_id: int The trust key ID
-     *               - message: string Any error or status message
+     * @return array The auth service response containing:
+     *               - success: bool API call success
+     *               - data: array The validation data:
+     *                 - is_valid: bool Whether the key is valid
+     *                 - calling_service: array The calling service info (id, name, slug)
+     *                 - target_service: array The target service info (id, name, slug)
+     *                 - permissions: array The granted permissions
+     *                 - reason: string Error reason if invalid
      *
      * @throws RequestException When the validation request fails
      * @throws \Exception When unexpected errors occur

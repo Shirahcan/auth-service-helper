@@ -286,10 +286,9 @@ class AuthServiceClient
      */
     public function validateTrustKey(string $trustKey): array
     {
-        return $this->post('services/validate-trust-key', [], [
-            'headers' => [
-                'X-Trust-Key' => $trustKey
-            ],
+        return $this->post('services/validate-trust-key', [
+            'trust_key' => $trustKey
+        ], [
             'log_context' => ['operation' => 'validate_trust_key']
         ]);
     }
