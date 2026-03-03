@@ -325,9 +325,18 @@ class TrustedServiceMiddleware
      */
     protected function injectServiceData(Request $request, array $validationData): void
     {
+        // Extract calling service slug for service-scoped access
+        $callingService = $validationData['calling_service'] ?? null;
+        $serviceSlug = is_array($callingService) ? ($callingService['slug'] ?? null) : $callingService;
+
+        // Set service_slug on request attributes (used by controllers for scoping)
+        if ($serviceSlug) {
+            $request->attributes->set('service_slug', $serviceSlug);
+        }
+
         $request->merge([
             'service_trust' => [
-                'calling_service' => $validationData['calling_service'] ?? null,
+                'calling_service' => $callingService,
                 'target_service' => $validationData['target_service'] ?? null,
                 'permissions' => $validationData['permissions'] ?? [],
                 'trust_key_id' => $validationData['trust_key_id'] ?? null,
