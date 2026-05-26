@@ -8,6 +8,8 @@
 
 The source-side outbox row + Eloquent model that backs queued, retryable, dead-letterable delivery of share payloads to peer products. This phase creates the table, the model with state constants, and the factory. The repository (E2) and dispatch job (E3+) layer on top.
 
+> **Migration registration note:** Phase D4 already calls `$this->loadMigrationsFrom(__DIR__ . '/../../database/migrations')` from `SharingServiceProvider::boot()`. The outbox migration drops into the same directory, so this phase does NOT need to add another `loadMigrationsFrom` call. Laravel deduplicates by path; double-registration is benign but the line is redundant. If you are executing E1 BEFORE D4 (out-of-order), add the `loadMigrationsFrom` call here and delete it from D4 when you get there.
+
 ## Files
 
 - **Create:** `database/migrations/2026_05_27_140000_create_outbound_share_messages_table.php`

@@ -180,12 +180,18 @@ class SharingService
 
     // ──── Stubs filled in by later phases ────
 
+    /**
+     * Stub. Final signature lands in Phase E2 with two additions:
+     *   - `$payload` typed as SharePayload (not array|object)
+     *   - constructor gains SharingOutboxRepository dep (and the SP `singleton` closure updated to match)
+     * Kept as a throwing stub here so the facade contract is visible end-to-end before E2.
+     */
     public function sendPayload(
         string $shareId,
         string $intent,
-        array|object $payload,
+        \AuthService\Helper\Sharing\Intents\Contracts\SharePayload $payload,
         string $idempotencyKey,
-    ): object {
+    ): \AuthService\Helper\Sharing\Outbox\OutboundShareMessage {
         throw new \LogicException(
             'Sharing::sendPayload requires SharingOutboxRepository (Phase E2). Not yet wired.'
         );

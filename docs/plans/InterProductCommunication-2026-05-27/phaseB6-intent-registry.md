@@ -48,11 +48,18 @@ class IntentRegistryTest extends TestCase
         $this->assertEquals('/path/to/schema.json', $reg->schemaPathFor('test.intent'));
     }
 
-    public function test_unknown_intent_throws(): void
+    public function test_unknown_intent_throws_from_payload_class_for(): void
     {
         $reg = new IntentRegistry();
         $this->expectException(UnknownIntentException::class);
         $reg->payloadClassFor('does.not.exist');
+    }
+
+    public function test_unknown_intent_throws_from_schema_path_for(): void
+    {
+        $reg = new IntentRegistry();
+        $this->expectException(UnknownIntentException::class);
+        $reg->schemaPathFor('does.not.exist');
     }
 
     public function test_known_intents_returns_all_registered(): void
@@ -148,7 +155,10 @@ class IntentRegistry
 
     public function schemaPathFor(string $slug): ?string
     {
-        return $this->intents[$slug]['schema'] ?? null;
+        if (!isset($this->intents[$slug])) {
+            throw new UnknownIntentException("Unknown intent: {$slug}");
+        }
+        return $this->intents[$slug]['schema'];
     }
 
     public function hydrate(string $slug, array $rawPayload): SharePayload

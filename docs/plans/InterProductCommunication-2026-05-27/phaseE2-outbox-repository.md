@@ -367,6 +367,28 @@ public function sendPayload(
 
 Note: `DispatchOutboundShareJob` is created in E3. The class reference compiles before E3 ships but won't dispatch successfully — that's fine; E2 only proves the repository contract.
 
+### Step 4a — ALSO update the SharingServiceProvider binding closure
+
+The C4 phase registered `SharingService` as a singleton with TWO constructor args (`UserShareClient`, `HandoffTokenClient`). E2 adds a third (`SharingOutboxRepository`). You MUST update the binding closure in the same edit, or the first resolution will throw "Too few arguments" at boot:
+
+```php
+// src/Sharing/SharingServiceProvider.php  ::register()
+$this->app->singleton(\AuthService\Helper\Sharing\SharingService::class, function ($app) {
+    return new \AuthService\Helper\Sharing\SharingService(
+        $app->make(\AuthService\Helper\Sharing\Client\UserShareClient::class),
+        $app->make(\AuthService\Helper\Sharing\Client\HandoffTokenClient::class),
+        $app->make(\AuthService\Helper\Sharing\Outbox\SharingOutboxRepository::class), // NEW in E2
+    );
+});
+```
+
+Run a single resolution test to prove the binding works after this edit:
+
+```bash
+vendor/bin/pest tests/Unit/Sharing/Outbox/SharingOutboxRepositoryTest.php tests/Unit/Sharing/SharingFacadeTest.php
+# Expected: both test files green.
+```
+
 ### Step 5 — Run + commit
 
 ```bash

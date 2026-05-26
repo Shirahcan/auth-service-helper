@@ -219,6 +219,69 @@ incremented on every rejected redemption.
 Phase: A4 of docs/plans/InterProductCommunication-2026-05-27/"
 ```
 
-## Note on `UserSession::issueForShare`
+### Step 4a — Add `UserSession::issueForShare` to the existing model
 
-This is a small helper to be added on the existing `UserSession` model. If `issueForShare` does not exist, it should be a 5-line method that constructs a session row with the correct fields. Add it as part of this phase if needed. Do not over-engineer — reuse existing session-creation logic.
+The exchange controller calls `UserSession::issueForShare(...)`. This method does NOT yet exist on the existing `App\Models\UserSession` model. Add it as part of this phase. The implementation mirrors the existing session-creation pattern in the model (read the file to confirm field names and any existing `issueFor*` helpers before editing):
+
+```php
+// Add inside App\Models\UserSession
+
+/**
+ * Issue a short-lived session for a cross-product user-share handoff.
+ * The plaintext_token is held in-memory on the returned model only (not persisted);
+ * the row stores token_hash + expires_at + service_id + user_id.
+ */
+public static function issueForShare(string $userId, string $serviceId, int $ttlSeconds): self
+{
+    $plaintext = \Illuminate\Support\Str::random(64);
+
+    $session = self::create([
+        'id' => \Illuminate\Support\Str::uuid()->toString(),
+        'user_id' => $userId,
+        'service_id' => $serviceId,
+        'token_hash' => hash('sha256', $plaintext),
+        'expires_at' => now()->addSeconds($ttlSeconds),
+        'issued_via' => 'user_share_handoff',
+    ]);
+
+    // Stash the plaintext on the in-memory instance ONLY so the controller can return it.
+    // Never persisted; never logged.
+    $session->plaintext_token = $plaintext;
+
+    return $session;
+}
+```
+
+If the existing `UserSession` table does not have an `issued_via` column, either omit that field from the insert OR add a small migration in this phase to extend the table:
+
+```php
+// project/database/migrations/2026_05_27_120100_add_issued_via_to_user_sessions.php
+return new class extends Migration {
+    public function up(): void
+    {
+        \Schema::table('user_sessions', function (\Illuminate\Database\Schema\Blueprint $t) {
+            if (!\Schema::hasColumn('user_sessions', 'issued_via')) {
+                $t->string('issued_via', 64)->default('login')->after('expires_at');
+            }
+        });
+    }
+    public function down(): void
+    {
+        \Schema::table('user_sessions', function (\Illuminate\Database\Schema\Blueprint $t) {
+            if (\Schema::hasColumn('user_sessions', 'issued_via')) {
+                $t->dropColumn('issued_via');
+            }
+        });
+    }
+};
+```
+
+Add an assertion to `HandoffTokenExchangeTest::test_exchange_returns_session_and_user()` proving the row was persisted:
+
+```php
+$this->assertDatabaseHas('user_sessions', [
+    'user_id' => $user->id,
+    'service_id' => $target->id,
+    'issued_via' => 'user_share_handoff',
+]);
+```

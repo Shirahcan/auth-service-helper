@@ -92,7 +92,7 @@ class RoutingTest extends TestCase
         // Provides a wrong handoff token so the controller itself errors with 400.
         // What we're asserting is that we GOT to the controller (i.e. middleware passed).
         $this->app->instance(
-            \AuthService\Helper\Sharing\HandoffTokenClient::class,
+            \AuthService\Helper\Sharing\Client\HandoffTokenClient::class,
             new class {
                 public function exchange(string $t): array
                 {

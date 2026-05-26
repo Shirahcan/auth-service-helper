@@ -175,7 +175,7 @@ class TestPurchasePayload implements SharePayload
 
 namespace Tests\Feature\Sharing\Inbox;
 
-use AuthService\Helper\Sharing\HandoffTokenClient;
+use AuthService\Helper\Sharing\Client\HandoffTokenClient;
 use AuthService\Helper\Sharing\Inbox\Events\InboundHandoffCompleted;
 use AuthService\Helper\Sharing\Inbox\Http\Controllers\InboundHandoffExchangeController;
 use Illuminate\Http\Request;
@@ -356,7 +356,7 @@ Create the handoff-exchange controller:
 
 namespace AuthService\Helper\Sharing\Inbox\Http\Controllers;
 
-use AuthService\Helper\Sharing\HandoffTokenClient;
+use AuthService\Helper\Sharing\Client\HandoffTokenClient;
 use AuthService\Helper\Sharing\Inbox\Events\InboundHandoffCompleted;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

@@ -19,11 +19,35 @@ Prove the full source → destination flow in a single PHPUnit process. One Test
 
 ## Steps
 
-### Step 1 — Add Testbench + adjust TestCase
+### Step 1 — Add Testbench + adjust TestCase + autoload-dev
 
-In `composer.json` `require-dev` add `"orchestra/testbench": "^9.0"`. The existing `Tests\\TestCase` extends `PHPUnit\Framework\TestCase`; integration tests need a Laravel app so create a sibling base class in the test file itself (Testbench's `Orchestra\Testbench\TestCase`).
+In `composer.json` make TWO edits, then run `composer update orchestra/testbench`:
 
-Run `composer update orchestra/testbench` once.
+**Edit 1 — `require-dev` section:**
+
+```json
+"require-dev": {
+    "orchestra/testbench": "^9.0",
+    // …existing entries…
+}
+```
+
+**Edit 2 — `autoload-dev.psr-4` section** (CRITICAL — without it the integration test's fixture class won't autoload and the test will fatal on class-not-found):
+
+```json
+"autoload-dev": {
+    "psr-4": {
+        "Tests\\": "tests/",
+        "Tests\\Integration\\": "tests/Integration/"
+    }
+}
+```
+
+(If `autoload-dev` already exists, merge the `Tests\\Integration\\` mapping in; don't replace the whole block.)
+
+Run `composer dump-autoload` after editing.
+
+The existing `Tests\\TestCase` extends `PHPUnit\Framework\TestCase`; integration tests need a Laravel app so create a sibling base class in the test file itself (Testbench's `Orchestra\Testbench\TestCase`).
 
 ### Step 2 — Write the test fixture handler
 
