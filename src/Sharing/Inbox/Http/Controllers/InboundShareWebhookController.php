@@ -5,15 +5,22 @@ namespace AuthService\Helper\Sharing\Inbox\Http\Controllers;
 use AuthService\Helper\Sharing\Envelope\Exceptions\InvalidEnvelopeException;
 use AuthService\Helper\Sharing\Envelope\IdempotencyGuard;
 use AuthService\Helper\Sharing\Envelope\ShareEnvelope;
+use AuthService\Helper\Sharing\Inbox\Events\InboundShareReceived;
 use AuthService\Helper\Sharing\Inbox\InboundShareMessage;
+use AuthService\Helper\Sharing\Intents\Exceptions\UnknownIntentException;
+use AuthService\Helper\Sharing\Intents\IntentRegistry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use JsonSchema\Constraints\Constraint;
+use JsonSchema\Validator;
 
 class InboundShareWebhookController
 {
     public function __construct(
         protected IdempotencyGuard $idempotency,
+        protected IntentRegistry $intents,
     ) {}
 
     public function receive(Request $request): JsonResponse
@@ -69,11 +76,77 @@ class InboundShareWebhookController
             ], 200);
         }
 
-        // Validation + event dispatch happen in D2c (subclass/override extends this).
+        // 4. Validate against intent schema + dispatch typed event
+        return $this->validateAndDispatch($row);
+    }
+
+    protected function validateAndDispatch(InboundShareMessage $row): JsonResponse
+    {
+        try {
+            $schemaPath = $this->intents->schemaPathFor($row->intent);
+        } catch (UnknownIntentException $e) {
+            return $this->markRejectedSchema($row, "Unknown intent: {$row->intent}");
+        }
+
+        if ($schemaPath !== null) {
+            $validator = new Validator();
+            $payloadObject = json_decode(json_encode($row->payload)); // stdClass for the validator
+            $validator->validate(
+                $payloadObject,
+                (object) ['$ref' => 'file://' . str_replace('\\', '/', $schemaPath)],
+                Constraint::CHECK_MODE_NORMAL,
+            );
+
+            if (!$validator->isValid()) {
+                $errors = collect($validator->getErrors())
+                    ->map(fn ($e) => "{$e['property']}: {$e['message']}")
+                    ->implode('; ');
+                return $this->markRejectedSchema($row, $errors);
+            }
+        }
+
+        $row->processing_status = 'validated';
+        $row->save();
+
+        // Hydrate typed payload + dispatch event
+        $typedPayload = $this->intents->hydrate($row->intent, $row->payload);
+
+        Event::dispatch(new InboundShareReceived(
+            shareId: $row->correlation_id,
+            intent: $row->intent,
+            intentVersion: $row->intent_version,
+            userId: $row->user_id,
+            sourceServiceId: $row->source_service_id,
+            payload: $typedPayload,
+            messageId: $row->message_id,
+            correlationId: $row->correlation_id,
+            metadata: [
+                'received_at' => $row->received_at?->toIso8601String(),
+                'headers' => $row->headers ?? [],
+            ],
+        ));
+
+        $row->processing_status = 'dispatched';
+        $row->dispatched_at = now();
+        $row->save();
+
         return new JsonResponse([
             'message_id' => $row->message_id,
-            'status' => 'received',
+            'status' => 'dispatched',
         ], 202);
+    }
+
+    protected function markRejectedSchema(InboundShareMessage $row, string $error): JsonResponse
+    {
+        $row->processing_status = 'rejected_schema';
+        $row->processing_error = $error;
+        $row->save();
+
+        return new JsonResponse([
+            'error' => 'schema_validation_failed',
+            'message_id' => $row->message_id,
+            'detail' => $error,
+        ], 422);
     }
 
     /**
