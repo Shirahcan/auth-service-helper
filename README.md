@@ -49,6 +49,15 @@ A lightweight Laravel 12 package for easy integration with the Authentication Mi
 
 See [docs/sharing.md](docs/sharing.md) for the full Sharing usage guide.
 
+### 🪝 Prep–Sign–Promote pattern (v1.4)
+Two-phase commit primitive for cross-product resource provisioning. Peer creates a TEMP record (with TTL + GC), user signs in an iframe, orchestrator confirms payment then promotes the temp into a permanent record. Built on v1.3 envelope HMAC.
+- Use cases: cross-product agreement signing, case-number pre-reservation, embedded form slots
+- New facade: `Sharing::prepare()` / `Sharing::promote()` / `Sharing::prepStatus()`
+- Built-in `agreement_sign` intent + `<PrepEmbed/>` React component
+- `sharing:gc-prep` artisan command for the cron sweep
+
+See [docs/sharing-prep.md](docs/sharing-prep.md) for the full Prep–Sign–Promote guide.
+
 ### ⚡ Key Benefits
 - **Lightweight**: Focused on web flows, not full API wrapping
 - **Easy Integration**: Install and configure in minutes

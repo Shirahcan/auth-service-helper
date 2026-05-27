@@ -174,7 +174,12 @@ vendor/bin/phpunit --testsuite=Integration  # in-process source→destination ro
 vendor/bin/phpunit --testsuite=Contract     # OpenAPI fragment pin (run `composer pull-contract-fixtures` to refresh)
 ```
 
+## Two-phase commit: Prep–Sign–Promote (v1.4)
+
+For cross-product flows that need to provision a resource on a peer BEFORE the orchestrator's external trigger (payment, admission outcome) is known, use the **Prep–Sign–Promote** pattern: peer creates a TEMP resource (TTL + GC), user interacts via iframe, orchestrator confirms the trigger then promotes the temp to a permanent record. Abandoned flows GC away cleanly. See **[docs/sharing-prep.md](sharing-prep.md)**.
+
 ## Architecture references
 
-- Spec: `docs/superpowers/specs/2026-05-26-inter-product-communication-design.md`
-- Implementation plan: `docs/plans/InterProductCommunication-2026-05-27/00_MASTER_INDEX.md`
+- Spec (v1.3): `docs/superpowers/specs/2026-05-26-inter-product-communication-design.md`
+- Spec (v1.4 Prep–Sign–Promote): `docs/superpowers/specs/2026-05-27-prep-sign-promote-pattern.md`
+- Implementation plans: `docs/plans/InterProductCommunication-2026-05-27/` + `docs/plans/PrepSignPromote-2026-05-27/`
