@@ -5,14 +5,22 @@ namespace Tests\Unit\Sharing;
 use AuthService\Helper\AuthServiceHelperServiceProvider;
 use AuthService\Helper\Sharing\Exceptions\UserShareCollisionException;
 use AuthService\Helper\Sharing\Facades\Sharing;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Orchestra\Testbench\TestCase;
 
 class SharingFacadeTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected function getPackageProviders($app): array
     {
         return [AuthServiceHelperServiceProvider::class];
+    }
+
+    protected function defineDatabaseMigrations(): void
+    {
+        $this->loadMigrationsFrom(__DIR__ . '/../../../database/migrations');
     }
 
     protected function defineEnvironment($app): void
@@ -62,17 +70,29 @@ class SharingFacadeTest extends TestCase
         );
     }
 
-    public function test_send_payload_throws_logic_exception_until_e2(): void
+    public function test_send_payload_enqueues_outbound_row(): void
     {
-        $this->expectException(\LogicException::class);
-        Sharing::sendPayload(
-            'share-1',
-            'service_purchase',
-            new \AuthService\Helper\Sharing\Intents\Builtin\ServicePurchasePayload(
+        // E2 wires sendPayload through SharingOutboxRepository, so this
+        // call now persists a row instead of throwing LogicException.
+        $row = Sharing::sendPayload(
+            shareId: (string) \Illuminate\Support\Str::uuid(),
+            intent: 'service_purchase',
+            payload: new \AuthService\Helper\Sharing\Intents\Builtin\ServicePurchasePayload(
                 orderId: 'o-1', serviceSlug: 'x', amountCents: 100,
                 currency: 'CAD', purchasedAt: '2026-05-27T10:00:00Z', items: [],
             ),
-            'idem-1',
+            idempotencyKey: 'idem-' . uniqid(),
+            peerSlug: 'portify',
+            targetServiceId: '00000000-0000-0000-0000-000000000002',
+            userId: '00000000-0000-0000-0000-000000000003',
+            sourceServiceId: '00000000-0000-0000-0000-000000000001',
         );
+
+        $this->assertInstanceOf(
+            \AuthService\Helper\Sharing\Outbox\OutboundShareMessage::class,
+            $row,
+        );
+        $this->assertEquals('portify', $row->peer_slug);
+        $this->assertEquals('service_purchase', $row->intent);
     }
 }

@@ -6,9 +6,13 @@ use AuthService\Helper\Sharing\Client\HandoffMintResult;
 use AuthService\Helper\Sharing\Client\HandoffTokenClient;
 use AuthService\Helper\Sharing\Client\ShareResult;
 use AuthService\Helper\Sharing\Client\UserShareClient;
+use AuthService\Helper\Sharing\Envelope\ShareEnvelope;
 use AuthService\Helper\Sharing\Exceptions\UserShareCollisionException;
 use AuthService\Helper\Sharing\Intents\Contracts\SharePayload;
+use AuthService\Helper\Sharing\Outbox\Jobs\DispatchOutboundShareJob;
 use AuthService\Helper\Sharing\Outbox\OutboundShareMessage;
+use AuthService\Helper\Sharing\Outbox\SharingOutboxRepository;
+use Illuminate\Support\Str;
 
 /**
  * The main facade implementation. Composed via Laravel container; accessed
@@ -23,6 +27,7 @@ class SharingService
     public function __construct(
         protected UserShareClient $userShareClient,
         protected HandoffTokenClient $handoffTokenClient,
+        protected SharingOutboxRepository $outbox,
     ) {}
 
     /**
@@ -84,20 +89,41 @@ class SharingService
 
     // ─── Stubs filled in by later phases ─────────────────────────────────
 
-    /**
-     * Stub. Final signature (typed `SharePayload`, returns
-     * `OutboundShareMessage`) lands in Phase E2 when the outbox repository
-     * is wired into the constructor. Throws so dev code fails loudly.
-     */
     public function sendPayload(
         string $shareId,
         string $intent,
         SharePayload $payload,
         string $idempotencyKey,
+        ?string $peerSlug = null,
+        ?string $targetServiceId = null,
+        ?string $userId = null,
+        ?string $sourceServiceId = null,
     ): OutboundShareMessage {
-        throw new \LogicException(
-            'Sharing::sendPayload requires SharingOutboxRepository (Phase E2). Not yet wired.'
-        );
+        $slug = $peerSlug ?? (string) config('authservice.sharing.default_peer_slug', 'portify');
+
+        $envelope = ShareEnvelope::fromArray([
+            'envelope_version' => '1',
+            'message_id' => 'msg_' . Str::ulid()->toBase32(),
+            'correlation_id' => $shareId,
+            'intent' => $intent,
+            'intent_version' => $payload::intentVersion(),
+            'source_service_id' => $sourceServiceId
+                ?? (string) config('authservice.sharing.source_service_id'),
+            'target_service_id' => $targetServiceId
+                ?? (string) config("authservice.sharing.peers.{$slug}.target_service_id"),
+            'user_id' => $userId ?? '',
+            'idempotency_key' => $idempotencyKey,
+            'issued_at' => now()->toIso8601String(),
+            'payload' => $payload->toArray(),
+        ]);
+
+        $row = $this->outbox->enqueue($envelope, $slug);
+
+        if ($row->status === OutboundShareMessage::STATUS_QUEUED) {
+            DispatchOutboundShareJob::dispatch($row->id);
+        }
+
+        return $row;
     }
 
     public function redeliver(string $outboundMessageId): OutboundShareMessage
