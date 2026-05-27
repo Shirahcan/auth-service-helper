@@ -81,34 +81,34 @@ Phase H (docs) — depends on G (after-the-fact docs)
 
 ### Phase A — Auth-service handoff tokens (in `auth-service` repo)
 
-- [ ] [A1. handoff_tokens migration](phaseA1-handoff-tokens-migration.md)
-- [ ] [A2. HandoffToken model + factory](phaseA2-handoff-token-model.md)
-- [ ] [A3. HandoffTokenController::mint + tests](phaseA3-mint-endpoint.md)
-- [ ] [A4. HandoffTokenController::exchange + tests](phaseA4-exchange-endpoint.md)
-- [ ] [A5. Routes + OpenAPI contract fixture](phaseA5-routes-openapi.md)
-- [ ] [A6. Iframe ADD_ACCOUNT_WITH_TOKEN handler](phaseA6-iframe-postmessage.md)
+- [x] [A1. handoff_tokens migration](phaseA1-handoff-tokens-migration.md) — ✅ `36d9baf`
+- [x] [A2. HandoffToken model + factory](phaseA2-handoff-token-model.md) — ✅ `9ad60b8`
+- [x] [A3. HandoffTokenController::mint + tests](phaseA3-mint-endpoint.md) — ✅ `6e9f466`
+- [x] [A4. HandoffTokenController::exchange + tests](phaseA4-exchange-endpoint.md) — ✅ `a13d38e`
+- [x] [A5. Routes + OpenAPI contract fixture](phaseA5-routes-openapi.md) — ✅ `0f12c5f`
+- [x] [A6. Iframe ADD_ACCOUNT_WITH_TOKEN handler](phaseA6-iframe-postmessage.md) — ✅ `440f2ea`
 
 ### Phase B — PHP helper Sharing/ foundation (in `auth-service-helper` repo)
 
-- [ ] [B1. ServiceProvider + composer wiring](phaseB1-service-provider.md)
-- [ ] [B2. ShareEnvelope DTO + validator](phaseB2-share-envelope.md)
-- [ ] [B3. EnvelopeSigner (HMAC ±5min)](phaseB3-envelope-signer.md)
-- [ ] [B4. EnvelopeVerifier](phaseB4-envelope-verifier.md)
-- [ ] [B5. IdempotencyGuard](phaseB5-idempotency-guard.md)
-- [ ] [B6. IntentRegistry + SharePayload contract](phaseB6-intent-registry.md)
-- [ ] [B7a. Built-in payloads I: ServicePurchase, ProfileSync](phaseB7a-payloads-i.md)
-- [ ] [B7b. Built-in payloads II: DocumentAdded, StatusUpdate](phaseB7b-payloads-ii.md)
-- [ ] [B7c. Built-in payloads III: Referral, Invite, RevocationNotice](phaseB7c-payloads-iii.md)
+- [x] [B1. ServiceProvider + composer wiring](phaseB1-service-provider.md) — ✅ (combined commit, see below)
+- [x] [B2. ShareEnvelope DTO + validator](phaseB2-share-envelope.md) — ✅
+- [x] [B3. EnvelopeSigner (HMAC ±5min)](phaseB3-envelope-signer.md) — ✅
+- [x] [B4. EnvelopeVerifier](phaseB4-envelope-verifier.md) — ✅
+- [x] [B5. IdempotencyGuard](phaseB5-idempotency-guard.md) — ✅
+- [x] [B6. IntentRegistry + SharePayload contract](phaseB6-intent-registry.md) — ✅
+- [x] [B7a. Built-in payloads I: ServicePurchase, ProfileSync](phaseB7a-payloads-i.md) — ✅
+- [x] [B7b. Built-in payloads II: DocumentAdded, StatusUpdate](phaseB7b-payloads-ii.md) — ✅
+- [x] [B7c. Built-in payloads III: Referral, Invite, RevocationNotice](phaseB7c-payloads-iii.md) — ✅ Phase B combined commit (30 tests green)
 
 ### Phase C — PHP helper source-side facade (in `auth-service-helper` repo)
 
-- [ ] [C1a. UserShareClient::shareUser + tests](phaseC1a-usershareclient-shareuser.md)
-- [ ] [C1b. UserShareClient list/get + tests](phaseC1b-usershareclient-reads.md)
-- [ ] [C1c. UserShareClient revoke + bulkRevoke](phaseC1c-usershareclient-revoke.md)
-- [ ] [C2a. UserShareCollisionException + listConflicts/getConflict](phaseC2a-conflict-reads.md)
-- [ ] [C2b. resolveCollision + waitForMergeCompletion](phaseC2b-conflict-resolution.md)
-- [ ] [C3. HandoffTokenClient (mint + exchange)](phaseC3-handoff-token-client.md)
-- [ ] [C4. Sharing facade wiring](phaseC4-sharing-facade.md)
+- [x] [C1a. UserShareClient::shareUser + tests](phaseC1a-usershareclient-shareuser.md) — ✅
+- [x] [C1b. UserShareClient list/get + tests](phaseC1b-usershareclient-reads.md) — ✅
+- [x] [C1c. UserShareClient revoke + bulkRevoke](phaseC1c-usershareclient-revoke.md) — ✅
+- [x] [C2a. UserShareCollisionException + listConflicts/getConflict](phaseC2a-conflict-reads.md) — ✅
+- [x] [C2b. resolveCollision + waitForMergeCompletion](phaseC2b-conflict-resolution.md) — ✅
+- [x] [C3. HandoffTokenClient (mint + exchange)](phaseC3-handoff-token-client.md) — ✅
+- [x] [C4. Sharing facade wiring](phaseC4-sharing-facade.md) — ✅ Phase C combined commit (12 tests green; 42 cumulative)
 
 ### Phase D — PHP helper inbox (in `auth-service-helper` repo)
 
@@ -153,12 +153,14 @@ Phase H (docs) — depends on G (after-the-fact docs)
 
 ## Status Tracker
 
+> **Last execution session:** 2026-05-27 — paused after Phase C. Resume from **Phase D1**.
+
 | Phase | Files | Status | Notes |
 |---|---|---|---|
-| A | 6 | ⬜ Not started | auth-service work |
-| B | 9 | ⬜ Not started | Helper foundation |
-| C | 7 | ⬜ Not started | Source-side helper API |
-| D | 6 | ⬜ Not started | Destination-side helper webhooks |
+| A | 6 | ✅ Done | auth-service work; 6 commits (`36d9baf`, `9ad60b8`, `6e9f466`, `a13d38e`, `0f12c5f`, `440f2ea`); 12 tests green |
+| B | 9 | ✅ Done | Helper foundation; 1 combined commit; 30 tests green |
+| C | 7 | ✅ Done | Source-side helper API; 1 combined commit; 12 tests green (42 cumulative in helper) |
+| D | 6 | ⬜ Not started | **Resume here.** Destination-side helper webhooks |
 | E | 6 | ⬜ Not started | Outbox/queue machinery |
 | F | 5 | ⬜ Not started | Next helper |
 | G | 3 | ⬜ Not started | Integration tests |
@@ -191,6 +193,18 @@ Phase H (docs) — depends on G (after-the-fact docs)
 | Replay attack on handoff token | Atomic single-use enforcement (UPDATE with `WHERE consumed_at IS NULL`); replay attempts logged and surface to alerting via Phase H4. |
 
 ---
+
+## Execution notes (2026-05-27 session)
+
+Small plan-vs-codebase adaptations discovered during Phase A/B/C execution. Future executors of Phase D+ should be aware:
+
+1. **`Service` model uses `domain` (not `base_url`).** A3's controller composes the redirect URL as `https://{$target->domain}/auth/handoff?token=…`.
+2. **`ServiceKey` plaintext access:** tests get the raw key via `ServiceKey::generateKey()['key']` (not a `$key->plaintext` attribute). The `withRawKey()` factory state ships a `raw_key` dynamic attribute.
+3. **`X-API-KEY` middleware:** the existing routes are wrapped in `Route::middleware([AuthenticateServiceKey::class])->group(...)` — there is NO `'service-key'` alias. Handoff routes were added INSIDE that existing group, not a new dedicated block.
+4. **`UserSession` model:** the existing schema uses `session_uuid` as the bearer token (not `token_hash` + `plaintext_token`). `UserSession::issueForShare($userId, $serviceId, $ttlSeconds)` was added as a thin wrapper around `createNewSession`. The "session_token" returned to the destination IS the `session_uuid`. No `issued_via` column added — origin stored in `metadata['issued_via']`.
+5. **`UserShare` has no factory** — tests use explicit `UserShare::create([...])`.
+6. **Iframe handler stores in localStorage**, not cookies — matches the existing `SET_SESSION` pattern (the auth-service iframe owns its own storage; it does NOT write cookies on the destination domain).
+7. **Phase B + C were each committed as one combined commit** (not 9 + 7 separate commits). Subsequent phases can choose either granularity.
 
 ## When complete
 
