@@ -40,6 +40,15 @@ A lightweight Laravel 12 package for easy integration with the Authentication Mi
 - **AccountSwitcher**: Secure iframe-based account switcher with session synchronization
 - **AccountAvatar**: Compact clickable avatar for NAV bars with session sync
 
+### 🔗 Sharing (cross-product communication)
+- **User shares**: Establish a share between source + destination services
+- **Signed payloads**: Push domain events (purchases, status updates, etc.) with HMAC-signed envelopes, idempotency, queued retry + DLQ
+- **Handoff tokens**: Single-use ~60s tokens for seamless cross-product redirects (the user arrives logged in)
+- **Inbox**: Helper-mounted webhook + handoff-exchange controllers — `InboundShareReceived` / `InboundHandoffCompleted` Laravel events for product code
+- **Ops**: `Sharing::getDeliveryStatus()`, `Sharing::listFailed()`, `Sharing::redeliver()`, `sharing:purge-delivered`
+
+See [docs/sharing.md](docs/sharing.md) for the full Sharing usage guide.
+
 ### ⚡ Key Benefits
 - **Lightweight**: Focused on web flows, not full API wrapping
 - **Easy Integration**: Install and configure in minutes
