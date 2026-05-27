@@ -9,9 +9,11 @@ use AuthService\Helper\Sharing\Client\UserShareClient;
 use AuthService\Helper\Sharing\Envelope\ShareEnvelope;
 use AuthService\Helper\Sharing\Exceptions\UserShareCollisionException;
 use AuthService\Helper\Sharing\Intents\Contracts\SharePayload;
+use AuthService\Helper\Sharing\Outbox\Exceptions\RedeliveryNotPermittedException;
 use AuthService\Helper\Sharing\Outbox\Jobs\DispatchOutboundShareJob;
 use AuthService\Helper\Sharing\Outbox\OutboundShareMessage;
 use AuthService\Helper\Sharing\Outbox\SharingOutboxRepository;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
 
 /**
@@ -126,18 +128,60 @@ class SharingService
         return $row;
     }
 
+    /**
+     * Re-attempt delivery of a previously DEAD_LETTERED message. Resets
+     * attempts so the row gets the full 5-attempt backoff schedule again.
+     * Throws if the caller targets a row that isn't safely re-deliverable.
+     */
     public function redeliver(string $outboundMessageId): OutboundShareMessage
     {
-        throw new \LogicException(
-            'Sharing::redeliver requires the outbox + DLQ pipeline (Phase E5). Not yet wired.'
-        );
+        $row = $this->outbox->getByMessageId($outboundMessageId);
+
+        if ($row === null) {
+            throw new RedeliveryNotPermittedException(
+                "Outbound message not found: {$outboundMessageId}",
+            );
+        }
+
+        if ($row->status !== OutboundShareMessage::STATUS_DEAD_LETTERED) {
+            throw new RedeliveryNotPermittedException(
+                "Cannot redeliver a row in status '{$row->status}'. "
+                . "Only DEAD_LETTERED rows are re-deliverable.",
+            );
+        }
+
+        $row->forceFill([
+            'status' => OutboundShareMessage::STATUS_QUEUED,
+            'attempts' => 0,
+            'next_retry_at' => null,
+            'dead_lettered_at' => null,
+            'last_response_status' => null,
+            // last_error is intentionally preserved as audit context
+        ])->save();
+
+        DispatchOutboundShareJob::dispatch($row->id);
+
+        return $row->fresh();
     }
 
-    public function lastInboundFor(string $shareId): ?object
+    /**
+     * All terminal-failure rows (dead-lettered + failed-permanent) ordered
+     * newest first. Useful for an ops triage UI.
+     */
+    public function listFailed(): Collection
     {
-        throw new \LogicException(
-            'Sharing::lastInboundFor requires the inbox read path (Phase D2c). Not yet wired.'
-        );
+        return OutboundShareMessage::query()
+            ->whereIn('status', [
+                OutboundShareMessage::STATUS_DEAD_LETTERED,
+                OutboundShareMessage::STATUS_FAILED_PERMANENT,
+            ])
+            ->orderByDesc('updated_at')
+            ->get();
+    }
+
+    public function lastInboundFor(string $shareId): ?\AuthService\Helper\Sharing\Inbox\InboundShareMessage
+    {
+        return \AuthService\Helper\Sharing\Inbox\Queries\Sharing::lastInboundFor($shareId);
     }
 
     protected function resolveServiceId(string $targetServiceSlugOrUuid): string
