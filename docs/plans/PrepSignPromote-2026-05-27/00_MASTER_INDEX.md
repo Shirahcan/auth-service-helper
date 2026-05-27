@@ -55,18 +55,18 @@ Phase H (test + docs + ship) — depends on everything
 
 ## Phase Files
 
-- [ ] [A. Spec](../../superpowers/specs/2026-05-27-prep-sign-promote-pattern.md) — spec lives outside the plan folder so it can be linked from the README
-- [ ] [B1. PrepResource model + migration + factory](phaseB1-prep-resource-model.md)
-- [ ] [B2. PrepResourceRepository](phaseB2-prep-resource-repository.md)
-- [ ] [B3. Prep lifecycle events](phaseB3-prep-resource-events.md)
-- [ ] [C1. /prepare endpoint](phaseC1-prepare-endpoint.md)
-- [ ] [C2. /embed render + /submit endpoints](phaseC2-embed-endpoints.md)
-- [ ] [C3. /promote + /status endpoints](phaseC3-promote-status-endpoints.md)
-- [ ] [D1. PrepIntentRegistry + AgreementSign builtin](phaseD1-intent-registry-agreement-sign.md)
-- [ ] [E1. PrepClient + facade](phaseE1-prep-client-facade.md)
-- [ ] [F1. Next iframe + PrepEmbed component](phaseF1-next-iframe-prep-embed.md)
-- [ ] [G1. GC command + service-provider mount + config](phaseG1-gc-routing-config.md)
-- [ ] [H1. Integration test + docs + ship](phaseH1-integration-test-docs-ship.md)
+- [x] [A. Spec](../../superpowers/specs/2026-05-27-prep-sign-promote-pattern.md) — ✅ `0dec8f3`
+- [x] [B1. PrepResource model + migration + factory](phaseB1-prep-resource-model.md) — ✅ `84ea327`
+- [x] [B2. PrepResourceRepository](phaseB2-prep-resource-repository.md) — ✅ `84ea327`
+- [x] [B3. Prep lifecycle events](phaseB3-prep-resource-events.md) — ✅ `84ea327`
+- [x] [C1. /prepare endpoint](phaseC1-prepare-endpoint.md) — ✅ `84ea327`
+- [x] [C2. /embed render + /submit endpoints](phaseC2-embed-endpoints.md) — ✅ `84ea327`
+- [x] [C3. /promote + /status endpoints](phaseC3-promote-status-endpoints.md) — ✅ `84ea327`
+- [x] [D1. PrepIntentRegistry + AgreementSign builtin](phaseD1-intent-registry-agreement-sign.md) — ✅ `84ea327`
+- [x] [E1. PrepClient + facade](phaseE1-prep-client-facade.md) — ✅ `84ea327`
+- [x] [F1. Next iframe + PrepEmbed component](phaseF1-next-iframe-prep-embed.md) — ✅ `65c9acd` (auth-service-nextjs)
+- [x] [G1. GC command + service-provider mount + config](phaseG1-gc-routing-config.md) — ✅ `84ea327`
+- [x] [H1. Integration test + docs + ship](phaseH1-integration-test-docs-ship.md) — ✅ `12667b1`
 
 ---
 
@@ -74,14 +74,14 @@ Phase H (test + docs + ship) — depends on everything
 
 | Phase | Files | Status | Notes |
 |---|---|---|---|
-| A | spec | ✅ Done | Lives at `docs/superpowers/specs/2026-05-27-prep-sign-promote-pattern.md` |
-| B | 3 | ⬜ Not started | Peer-side persistence layer |
-| C | 3 | ⬜ Not started | Peer-side HTTP surface |
-| D | 1 | ⬜ Not started | Intent dispatch |
-| E | 1 | ⬜ Not started | Orchestrator-side client |
-| F | 1 | ⬜ Not started | Next helper iframe support |
-| G | 1 | ⬜ Not started | GC + routing + config |
-| H | 1 | ⬜ Not started | Integration test + docs + ship |
+| A | spec | ✅ Done | `0dec8f3` — `docs/superpowers/specs/2026-05-27-prep-sign-promote-pattern.md` |
+| B | 3 | ✅ Done | `84ea327` — 12 unit tests green |
+| C | 3 | ✅ Done | `84ea327` — 17 feature tests green |
+| D | 1 | ✅ Done | `84ea327` — registry + AgreementSign builtin, 8 unit tests |
+| E | 1 | ✅ Done | `84ea327` — Sharing::prepare/promote/prepStatus on facade |
+| F | 1 | ✅ Done | `65c9acd` — auth-service-nextjs, 10 vitest tests green |
+| G | 1 | ✅ Done | `84ea327` — sharing:gc-prep + auto-mounted routes + config |
+| H | 1 | ✅ Done | `12667b1` — round-trip integration test (12 assertions), docs/sharing-prep.md, README cross-link, composer 1.4.0 |
 
 **Total phase files:** 12 (11 implementation + spec)
 
