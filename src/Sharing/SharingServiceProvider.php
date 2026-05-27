@@ -21,6 +21,11 @@ class SharingServiceProvider extends ServiceProvider
         $this->app->singleton(\AuthService\Helper\Sharing\Client\UserShareClient::class);
         $this->app->singleton(\AuthService\Helper\Sharing\Client\HandoffTokenClient::class);
         $this->app->singleton(\AuthService\Helper\Sharing\SharingService::class);
+
+        $this->app->bind(
+            \AuthService\Helper\Sharing\Envelope\Contracts\IdempotencyStore::class,
+            \AuthService\Helper\Sharing\Envelope\Stores\EloquentIdempotencyStore::class,
+        );
     }
 
     public function boot(): void
