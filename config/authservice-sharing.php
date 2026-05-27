@@ -62,4 +62,28 @@ return [
     | ],
     */
     'peers' => [],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Prep–Sign–Promote (v1.4)
+    |--------------------------------------------------------------------------
+    | Two-phase commit primitive for cross-product resource provisioning.
+    | See docs/sharing-prep.md.
+    */
+    'prep' => [
+        // TTL (hours) for unsigned (prepared) entries. Short — abuse surface.
+        'ttl_prepared_hours' => 24,
+
+        // TTL (hours) after signing. Longer — student has committed, give time
+        // to complete payment + orchestrator-side promote.
+        'ttl_signed_hours' => 72,
+
+        // Base URL used to construct the embed_url returned by /prepare.
+        // Defaults to app.url; override per-env to point at the public host.
+        'embed_base_url' => env('SHARING_PREP_EMBED_BASE_URL'),
+
+        // Max rows per sharing:gc-prep sweep. Run hourly via the Laravel
+        // scheduler.
+        'gc_batch_size' => 500,
+    ],
 ];

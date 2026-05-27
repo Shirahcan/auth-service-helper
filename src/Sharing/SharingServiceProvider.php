@@ -34,6 +34,11 @@ class SharingServiceProvider extends ServiceProvider
             \AuthService\Helper\Sharing\Envelope\Contracts\IdempotencyStore::class,
             \AuthService\Helper\Sharing\Envelope\Stores\EloquentIdempotencyStore::class,
         );
+
+        // Prep–Sign–Promote (v1.4)
+        $this->app->singleton(\AuthService\Helper\Sharing\Prep\Intents\PrepIntentRegistry::class);
+        $this->app->singleton(\AuthService\Helper\Sharing\Prep\PrepResourceRepository::class);
+        $this->app->singleton(\AuthService\Helper\Sharing\Prep\Client\PrepClient::class);
     }
 
     public function boot(): void
@@ -63,6 +68,25 @@ class SharingServiceProvider extends ServiceProvider
             )->middleware('share-helper.internal');
         });
 
+        // Prep–Sign–Promote routes (v1.4)
+        $router->group([
+            'prefix' => 'api/v1/sharing/prep',
+            'middleware' => ['api', 'share-envelope.verify'],
+        ], function ($router) {
+            $router->post('/prepare',           [\AuthService\Helper\Sharing\Prep\Http\Controllers\PrepareController::class, 'prepare']);
+            $router->post('/{prep_id}/promote', [\AuthService\Helper\Sharing\Prep\Http\Controllers\PromoteController::class, 'promote']);
+            $router->post('/{prep_id}/status',  [\AuthService\Helper\Sharing\Prep\Http\Controllers\PromoteController::class, 'status']);
+        });
+
+        // Public iframe surface (auth'd by unguessable prep_id only — NOT envelope-signed)
+        $router->group([
+            'prefix' => 'sharing/embed',
+            'middleware' => ['api'],
+        ], function ($router) {
+            $router->get('/{intent_slug}/{prep_id}',         [\AuthService\Helper\Sharing\Prep\Http\Controllers\EmbedController::class, 'render']);
+            $router->post('/{intent_slug}/{prep_id}/submit', [\AuthService\Helper\Sharing\Prep\Http\Controllers\EmbedController::class, 'submit']);
+        });
+
         // Config publish
         $this->publishes([
             __DIR__ . '/../../config/authservice-sharing.php' => config_path('authservice-sharing.php'),
@@ -72,6 +96,7 @@ class SharingServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \AuthService\Helper\Sharing\Console\PurgeDeliveredCommand::class,
+                \AuthService\Helper\Sharing\Prep\Console\GcPrepCommand::class,
             ]);
         }
 
@@ -86,5 +111,16 @@ class SharingServiceProvider extends ServiceProvider
             $reg->register('invite', InvitePayload::class, "{$base}/invite.json");
             $reg->register('revocation_notice', RevocationNoticePayload::class, "{$base}/revocation-notice.json");
         });
+
+        // Register built-in Prep–Sign–Promote intent handlers (v1.4)
+        $this->app->afterResolving(
+            \AuthService\Helper\Sharing\Prep\Intents\PrepIntentRegistry::class,
+            function (\AuthService\Helper\Sharing\Prep\Intents\PrepIntentRegistry $reg) {
+                $reg->register(
+                    'agreement_sign',
+                    new \AuthService\Helper\Sharing\Prep\Intents\Builtin\AgreementSignHandler(),
+                );
+            },
+        );
     }
 }

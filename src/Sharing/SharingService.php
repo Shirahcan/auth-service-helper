@@ -186,6 +186,38 @@ class SharingService
         return \AuthService\Helper\Sharing\Inbox\Queries\Sharing::lastInboundFor($shareId);
     }
 
+    // ─── Prep–Sign–Promote (v1.4) ─────────────────────────────────────────
+
+    public function prepare(
+        string $peerSlug,
+        string $intentSlug,
+        string $idempotencyKey,
+        array $sourceResource,
+        array $studentData,
+        array $payload,
+        ?string $returnTo = null,
+    ): \AuthService\Helper\Sharing\Prep\Client\PrepResult {
+        return app(\AuthService\Helper\Sharing\Prep\Client\PrepClient::class)
+            ->prepare($peerSlug, $intentSlug, $idempotencyKey, $sourceResource, $studentData, $payload, $returnTo);
+    }
+
+    public function promote(
+        string $peerSlug,
+        string $prepId,
+        string $shareId,
+        array $triggerProof = [],
+        ?string $idempotencyKey = null,
+    ): \AuthService\Helper\Sharing\Prep\Client\PromoteResultDto {
+        return app(\AuthService\Helper\Sharing\Prep\Client\PrepClient::class)
+            ->promote($peerSlug, $prepId, $shareId, $triggerProof, $idempotencyKey ?? "promote:{$prepId}");
+    }
+
+    public function prepStatus(string $peerSlug, string $prepId): \AuthService\Helper\Sharing\Prep\Client\PrepStatus
+    {
+        return app(\AuthService\Helper\Sharing\Prep\Client\PrepClient::class)
+            ->prepStatus($peerSlug, $prepId);
+    }
+
     /**
      * Aggregate counts per state + last timestamps for a share. Used by
      * the source-side delivery-status UI.
