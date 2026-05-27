@@ -44,6 +44,9 @@ class AuthServiceHelperServiceProvider extends ServiceProvider
 
         // Load helper functions
         require_once __DIR__ . '/Helpers/auth_helpers.php';
+
+        // Register the Sharing/ namespace provider (cross-product user-sharing + handoff)
+        $this->app->register(\AuthService\Helper\Sharing\SharingServiceProvider::class);
     }
 
     /**

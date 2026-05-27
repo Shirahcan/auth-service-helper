@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "type": "object",
+  "required": ["referral_code"],
+  "properties": {
+    "referral_code":    { "type": "string" },
+    "referrer_user_id": { "type": "string" },
+    "campaign":         { "type": "string" }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "type": "object",
+  "required": ["document_id", "kind", "source_url", "uploaded_at"],
+  "properties": {
+    "document_id": { "type": "string" },
+    "kind":        { "type": "string" },
+    "source_url":  { "type": "string", "format": "uri" },
+    "uploaded_at": { "type": "string", "format": "date-time" },
+    "metadata":    { "type": "object" }
+  },
+  "additionalProperties": true
+}

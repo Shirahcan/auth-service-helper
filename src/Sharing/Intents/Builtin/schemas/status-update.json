@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "type": "object",
+  "required": ["status", "previous_status", "effective_at"],
+  "properties": {
+    "status":          { "type": "string" },
+    "previous_status": { "type": "string" },
+    "effective_at":    { "type": "string", "format": "date-time" },
+    "notes":           { "type": "string" }
+  },
+  "additionalProperties": true
+}
