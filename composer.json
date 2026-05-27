@@ -70,6 +70,7 @@
     "prefer-stable": true,
     "scripts": {
         "test": "phpunit",
-        "test-coverage": "phpunit --coverage-html coverage"
+        "test-coverage": "phpunit --coverage-html coverage",
+        "pull-contract-fixtures": "@php scripts/pull-contract-fixtures.php"
     }
 }

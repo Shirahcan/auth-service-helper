@@ -1,0 +1,70 @@
+openapi: 3.1.0
+info:
+  title: Auth-Service Handoff Tokens
+  version: "1.0.0"
+paths:
+  /api/v1/auth/handoff-tokens:
+    post:
+      operationId: mintHandoffToken
+      security: [{ ServiceKey: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [share_id]
+              properties:
+                share_id: { type: string, format: uuid }
+                next_path: { type: string, maxLength: 2048, nullable: true }
+      responses:
+        "200":
+          description: Token minted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, redirect_url, expires_at]
+                properties:
+                  token: { type: string, minLength: 40 }
+                  redirect_url: { type: string, format: uri }
+                  expires_at: { type: string, format: date-time }
+        "403": { description: Share not owned by caller }
+        "409": { description: Share revoked }
+  /api/v1/auth/handoff-tokens/{token}/exchange:
+    post:
+      operationId: exchangeHandoffToken
+      security: [{ ServiceKey: [] }]
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Token redeemed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user, session_token, share_id]
+                properties:
+                  user:
+                    type: object
+                    required: [uuid, name, email]
+                    properties:
+                      uuid: { type: string, format: uuid }
+                      name: { type: string }
+                      email: { type: string, format: email }
+                  session_token: { type: string }
+                  share_id: { type: string, format: uuid }
+                  next_path: { type: string, nullable: true }
+        "403": { description: Wrong target service }
+        "404": { description: Token unknown }
+        "410": { description: Token consumed or expired }
+components:
+  securitySchemes:
+    ServiceKey:
+      type: apiKey
+      in: header
+      name: X-API-KEY
