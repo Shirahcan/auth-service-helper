@@ -9,11 +9,13 @@ use AuthService\Helper\Sharing\Client\UserShareClient;
 use AuthService\Helper\Sharing\Envelope\ShareEnvelope;
 use AuthService\Helper\Sharing\Exceptions\UserShareCollisionException;
 use AuthService\Helper\Sharing\Intents\Contracts\SharePayload;
+use AuthService\Helper\Sharing\Outbox\DeliveryStatusSummary;
 use AuthService\Helper\Sharing\Outbox\Exceptions\RedeliveryNotPermittedException;
 use AuthService\Helper\Sharing\Outbox\Jobs\DispatchOutboundShareJob;
 use AuthService\Helper\Sharing\Outbox\OutboundShareMessage;
 use AuthService\Helper\Sharing\Outbox\SharingOutboxRepository;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
@@ -182,6 +184,34 @@ class SharingService
     public function lastInboundFor(string $shareId): ?\AuthService\Helper\Sharing\Inbox\InboundShareMessage
     {
         return \AuthService\Helper\Sharing\Inbox\Queries\Sharing::lastInboundFor($shareId);
+    }
+
+    /**
+     * Aggregate counts per state + last timestamps for a share. Used by
+     * the source-side delivery-status UI.
+     */
+    public function getDeliveryStatus(string $shareId): DeliveryStatusSummary
+    {
+        $rows = $this->outbox->getByShareId($shareId);
+
+        $pending = $rows->whereIn('status', OutboundShareMessage::DELIVERABLE_STATES)->count()
+            + $rows->where('status', OutboundShareMessage::STATUS_IN_FLIGHT)->count();
+        $delivered = $rows->where('status', OutboundShareMessage::STATUS_DELIVERED)->count();
+        $failed = $rows->where('status', OutboundShareMessage::STATUS_FAILED_PERMANENT)->count();
+        $deadLettered = $rows->where('status', OutboundShareMessage::STATUS_DEAD_LETTERED)->count();
+
+        $lastDelivered = $rows->whereNotNull('delivered_at')->max('delivered_at');
+        $lastAttempt = $rows->whereNotNull('last_attempt_at')->max('last_attempt_at');
+
+        return new DeliveryStatusSummary(
+            shareId: $shareId,
+            pending: $pending,
+            delivered: $delivered,
+            failed: $failed,
+            deadLettered: $deadLettered,
+            lastDeliveredAt: $lastDelivered ? Carbon::parse($lastDelivered) : null,
+            lastAttemptAt: $lastAttempt ? Carbon::parse($lastAttempt) : null,
+        );
     }
 
     protected function resolveServiceId(string $targetServiceSlugOrUuid): string

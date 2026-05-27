@@ -68,6 +68,13 @@ class SharingServiceProvider extends ServiceProvider
             __DIR__ . '/../../config/authservice-sharing.php' => config_path('authservice-sharing.php'),
         ], 'auth-service-helper-sharing-config');
 
+        // Commands
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \AuthService\Helper\Sharing\Console\PurgeDeliveredCommand::class,
+            ]);
+        }
+
         // Register built-in intents
         $this->app->afterResolving(IntentRegistry::class, function (IntentRegistry $reg) {
             $base = __DIR__ . '/Intents/Builtin/schemas';
