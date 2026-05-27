@@ -16,6 +16,8 @@ class SharingServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->mergeConfigFrom(__DIR__ . '/../../config/authservice-sharing.php', 'authservice-sharing');
+
         $this->app->singleton(IntentRegistry::class);
 
         $this->app->singleton(\AuthService\Helper\Sharing\Client\UserShareClient::class);
@@ -30,6 +32,37 @@ class SharingServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Migrations
+        $this->loadMigrationsFrom(__DIR__ . '/../../database/migrations');
+
+        // Middleware aliases
+        /** @var \Illuminate\Routing\Router $router */
+        $router = $this->app['router'];
+        $router->aliasMiddleware('share-envelope.verify', \AuthService\Helper\Sharing\Inbox\Http\Middleware\VerifyShareEnvelopeSignature::class);
+        $router->aliasMiddleware('share-helper.internal', \AuthService\Helper\Sharing\Inbox\Http\Middleware\VerifyInternalToken::class);
+
+        // Routes
+        $router->group([
+            'prefix' => '',
+            'middleware' => ['api'],
+        ], function ($router) {
+            $router->post(
+                ltrim((string) config('authservice-sharing.webhook_path'), '/'),
+                [\AuthService\Helper\Sharing\Inbox\Http\Controllers\InboundShareWebhookController::class, 'receive'],
+            )->middleware('share-envelope.verify');
+
+            $router->post(
+                ltrim((string) config('authservice-sharing.handoff_exchange_path'), '/'),
+                [\AuthService\Helper\Sharing\Inbox\Http\Controllers\InboundHandoffExchangeController::class, 'exchange'],
+            )->middleware('share-helper.internal');
+        });
+
+        // Config publish
+        $this->publishes([
+            __DIR__ . '/../../config/authservice-sharing.php' => config_path('authservice-sharing.php'),
+        ], 'auth-service-helper-sharing-config');
+
+        // Register built-in intents
         $this->app->afterResolving(IntentRegistry::class, function (IntentRegistry $reg) {
             $base = __DIR__ . '/Intents/Builtin/schemas';
             $reg->register('service_purchase', ServicePurchasePayload::class, "{$base}/service-purchase.json");
