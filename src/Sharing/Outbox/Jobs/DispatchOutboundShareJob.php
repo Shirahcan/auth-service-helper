@@ -5,6 +5,7 @@ namespace AuthService\Helper\Sharing\Outbox\Jobs;
 use AuthService\Helper\Sharing\Envelope\EnvelopeSigner;
 use AuthService\Helper\Sharing\Envelope\ShareEnvelope;
 use AuthService\Helper\Sharing\Outbox\OutboundShareMessage;
+use AuthService\Helper\Sharing\Outbox\RetryScheduler;
 use AuthService\Helper\Sharing\Outbox\SharingOutboxRepository;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -61,7 +62,7 @@ class DispatchOutboundShareJob implements ShouldQueue
                 ->withBody($envelope->toCanonicalJson(), 'application/json')
                 ->send('POST', (string) $peer['webhook_url']);
         } catch (Throwable $e) {
-            $this->handleFailure($repo, $row, null, $e->getMessage());
+            $this->handleFailure($repo, $row, null, $e->getMessage(), $e);
             return;
         }
 
@@ -74,16 +75,30 @@ class DispatchOutboundShareJob implements ShouldQueue
         $this->handleFailure($repo, $row, $status, $response->body());
     }
 
-    /**
-     * Skeleton retry path — Phase E4 replaces this with a classifier +
-     * exponential backoff + DLQ-after-N-attempts.
-     */
     protected function handleFailure(
         SharingOutboxRepository $repo,
         OutboundShareMessage $row,
         ?int $status,
         ?string $error,
+        ?Throwable $exception = null,
     ): void {
-        $repo->scheduleRetry($row, attemptN: $row->attempts, responseStatus: $status, error: $error);
+        if (!RetryScheduler::isTransient($status, $exception)) {
+            $repo->markFailedPermanent($row, $status, $error);
+            return;
+        }
+
+        $delay = RetryScheduler::nextDelayForAttempt($row->attempts);
+        if ($delay === null) {
+            $repo->deadLetter($row, "Attempts exhausted after {$row->attempts} tries: " . (string) $error);
+            return;
+        }
+
+        $repo->scheduleRetry(
+            $row,
+            attemptN: $row->attempts,
+            responseStatus: $status,
+            error: $error,
+            delaySeconds: $delay,
+        );
     }
 }

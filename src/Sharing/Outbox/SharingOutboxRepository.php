@@ -80,9 +80,9 @@ class SharingOutboxRepository
         int $attemptN,
         ?int $responseStatus,
         ?string $error,
+        ?int $delaySeconds = null,
     ): void {
-        // Default 1m delay; E4 replaces the schedule with exponential backoff
-        $delaySeconds = 60;
+        $delaySeconds = $delaySeconds ?? 60;
 
         $row->forceFill([
             'status' => OutboundShareMessage::STATUS_RETRY_SCHEDULED,
