@@ -16,7 +16,13 @@ class SharingServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../../config/authservice-sharing.php', 'authservice-sharing');
+        // Manual merge into authservice.sharing.* — Laravel 12's mergeConfigFrom
+        // builds the file path from the dotted key, so it can't be used here.
+        $defaults = require __DIR__ . '/../../config/authservice-sharing.php';
+        /** @var \Illuminate\Contracts\Config\Repository $config */
+        $config = $this->app['config'];
+        $existing = (array) $config->get('authservice.sharing', []);
+        $config->set('authservice.sharing', array_merge($defaults, $existing));
 
         $this->app->singleton(IntentRegistry::class);
 
@@ -47,12 +53,12 @@ class SharingServiceProvider extends ServiceProvider
             'middleware' => ['api'],
         ], function ($router) {
             $router->post(
-                ltrim((string) config('authservice-sharing.webhook_path'), '/'),
+                ltrim((string) config('authservice.sharing.webhook_path'), '/'),
                 [\AuthService\Helper\Sharing\Inbox\Http\Controllers\InboundShareWebhookController::class, 'receive'],
             )->middleware('share-envelope.verify');
 
             $router->post(
-                ltrim((string) config('authservice-sharing.handoff_exchange_path'), '/'),
+                ltrim((string) config('authservice.sharing.handoff_exchange_path'), '/'),
                 [\AuthService\Helper\Sharing\Inbox\Http\Controllers\InboundHandoffExchangeController::class, 'exchange'],
             )->middleware('share-helper.internal');
         });

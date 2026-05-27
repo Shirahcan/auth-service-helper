@@ -17,7 +17,7 @@ class VerifyShareEnvelopeSignatureTest extends TestCase
 
     protected function defineEnvironment($app): void
     {
-        $app['config']->set('authservice-sharing.peers', [
+        $app['config']->set('authservice.sharing.peers', [
             'studendly' => [
                 'source_service_id' => '00000000-0000-0000-0000-000000000001',
                 'trust_key' => 'trust_studendly_xxx',
@@ -87,8 +87,8 @@ class VerifyShareEnvelopeSignatureTest extends TestCase
 
     public function test_previous_secret_accepted_during_rotation(): void
     {
-        config()->set('authservice-sharing.peers.studendly.current_secret', 'sec_new');
-        config()->set('authservice-sharing.peers.studendly.previous_secret', 'sec_old');
+        config()->set('authservice.sharing.peers.studendly.current_secret', 'sec_new');
+        config()->set('authservice.sharing.peers.studendly.previous_secret', 'sec_old');
 
         $env = $this->fakeEnv();
         $body = $env->toCanonicalJson();

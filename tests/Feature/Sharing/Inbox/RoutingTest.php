@@ -20,8 +20,8 @@ class RoutingTest extends TestCase
 
     protected function defineEnvironment($app): void
     {
-        $app['config']->set('authservice-sharing.internal_token', 'internal_xxx');
-        $app['config']->set('authservice-sharing.peers', []);
+        $app['config']->set('authservice.sharing.internal_token', 'internal_xxx');
+        $app['config']->set('authservice.sharing.peers', []);
     }
 
     public function test_inbound_user_share_route_is_registered(): void

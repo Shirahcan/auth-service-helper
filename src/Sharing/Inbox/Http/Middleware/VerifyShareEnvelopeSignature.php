@@ -32,7 +32,7 @@ class VerifyShareEnvelopeSignature
         $verifier = new EnvelopeVerifier(
             currentSecret: $peer['config']['current_secret'],
             previousSecret: $peer['config']['previous_secret'] ?? null,
-            windowSeconds: (int) config('authservice-sharing.replay_window_seconds', 300),
+            windowSeconds: (int) config('authservice.sharing.replay_window_seconds', 300),
         );
 
         try {
@@ -54,7 +54,7 @@ class VerifyShareEnvelopeSignature
      */
     private function resolvePeerByTrustKey(string $trustKey): ?array
     {
-        $peers = (array) config('authservice-sharing.peers', []);
+        $peers = (array) config('authservice.sharing.peers', []);
         foreach ($peers as $slug => $cfg) {
             if (($cfg['trust_key'] ?? null) === $trustKey) {
                 return ['slug' => $slug, 'config' => $cfg];

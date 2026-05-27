@@ -16,7 +16,7 @@ class VerifyInternalToken
 {
     public function handle(Request $request, Closure $next): mixed
     {
-        $expected = (string) config('authservice-sharing.internal_token', '');
+        $expected = (string) config('authservice.sharing.internal_token', '');
         $provided = (string) $request->header('X-Internal-Token', '');
 
         if ($expected === '' || !hash_equals($expected, $provided)) {
